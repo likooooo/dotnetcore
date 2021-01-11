@@ -1,4 +1,6 @@
 # dotnetcore
+>>dotnetcore学习文档
+## 添加了目录 __.Helper/HeapHelper__ 实现堆内存操作
 ## 添加了目录 __.Helper/DB__ 实现数据IO操作
 >>- .Helper/DB/IniHelper （已测试）
 >>>>实现ini文件读写
