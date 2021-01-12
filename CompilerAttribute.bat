@@ -1,0 +1,1 @@
+dotnet new Console -o CompilerAttributeTest

@@ -3,10 +3,6 @@ using System.Threading.Tasks;
 
 namespace TAP
 {
-    // class MyTask
-    // {
-    //     public static YieldAwaitable Yield();
-    // }
     class Program
     {
         static void Main(string[] args)
@@ -28,6 +24,5 @@ namespace TAP
             Task.WaitAny(myTsk);
             Console.WriteLine(length);
         }
-        //internal Task<System.>
     }
 }

@@ -1,5 +1,9 @@
 # dotnetcore
 >>dotnetcore学习文档
+## 添加了
+>>- DownloadTool 异步下载工具
+>>- CompilerAttributeTest 编译器属性 ，此处 MsgData 是项目中log的好用法。(未整理)
+>>- GenericTest 泛型接口学习（放弃）
 ## 添加了目录 __.Helper/HeapHelper__ 实现堆内存操作
 ## 添加了目录 __.Helper/DB__ 实现数据IO操作
 >>- .Helper/DB/IniHelper （已测试）
