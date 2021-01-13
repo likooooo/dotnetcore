@@ -1,7 +1,8 @@
 # dotnetcore
 >>dotnetcore学习文档
 ## 添加了ImageProcess
->>- 图像算法（未完成），需要借助之前做过的内容copy一下
+>>- 添加了bmp文件读取类
+>>- 实现了ReadImage(string)
 ## 添加了学习记录
 >>- DownloadTool 异步下载工具
 >>- CompilerAttributeTest 编译器属性 ，此处 MsgData 是项目中log的好用法。(未整理)
