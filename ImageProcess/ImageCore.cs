@@ -1,3 +1,4 @@
+#pragma warning disable 0649
 using System;
 using System.Text;
 using System.Linq;
@@ -14,7 +15,7 @@ using RuntimeDebug;
 namespace ImageProcess
 {
     [Serializable]
-    public struct ImageType
+    internal struct ImageType
     {
         [JsonInclude]
         public ushort bfType;
@@ -26,7 +27,7 @@ namespace ImageProcess
     }
 
     [Serializable]
-    public struct ImageFile
+    internal struct ImageFile
     {
         [JsonInclude]
         public int bfSize;
@@ -45,7 +46,7 @@ namespace ImageProcess
 
 
     [Serializable]
-    public struct ImageFileInfo
+    internal struct ImageFileInfo
     {
         [JsonInclude]
         public int biSize;
@@ -87,7 +88,7 @@ namespace ImageProcess
     }
     
     [Serializable]
-    public struct Section 
+    internal struct Section 
     {
         [JsonInclude]
         public int a;
@@ -105,7 +106,7 @@ namespace ImageProcess
     }
 
     [Serializable]
-    class ColorPalette
+    internal class ColorPalette
     {
         [NonSerialized]
         public int[] palette;
@@ -136,7 +137,7 @@ namespace ImageProcess
         }
     }
 
-    class ImageCommon
+    public class ImageCommon
     {
         //p为非托管内存
         public static TStruct PtrToStruct<TStruct>(IntPtr p) where TStruct : struct
@@ -170,11 +171,11 @@ namespace ImageProcess
 
     public class BmpImage:ImageData
     {
-        ImageType type;
-        ImageFile bf;
-        ImageFileInfo bi;
-        Section s;
-        ColorPalette cp;
+        internal ImageType type;
+        internal ImageFile bf;
+        internal ImageFileInfo bi;
+        internal Section s;
+        internal ColorPalette cp;
 
         public BmpImage():base(){}
 
