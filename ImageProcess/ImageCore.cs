@@ -106,20 +106,77 @@ namespace ImageProcess
     }
 
     [Serializable]
+    public struct tagRGBQUAD 
+    {
+        public byte b;
+        public byte g;
+        public byte r;
+        public byte a;
+        public tagRGBQUAD(byte b,byte g,byte r)
+        {
+            this.b = b;
+            this.g = g;
+            this.r = r;
+            this.a = 0;
+        }
+    }
+
+
+    [Serializable]
     internal class ColorPalette
     {
         [NonSerialized]
-        public int[] palette;
+        public tagRGBQUAD[] palette;
         public int Count{get;private set;}
+        public ColorPalette(){}
         public ColorPalette(ImageFileInfo info)
         {
-            Count = info.biBitCount<<2;
-            palette = new int[Count];
+            Count = 1<<info.biBitCount;
+            palette = new tagRGBQUAD[Count];
         }
 
         public override string ToString()
         {
             return JsonSerializer.Serialize(this,new JsonSerializerOptions{WriteIndented = true});
+        }
+
+        //1位二值图
+        public static ColorPalette GetBinaryImagePalette()
+        {
+            ColorPalette res = new ColorPalette();
+            res.Count = 2;
+            res.palette = new tagRGBQUAD[]
+            {
+                new tagRGBQUAD(0,0,0),
+                new tagRGBQUAD(1,1,1)
+            };
+            return res;
+        }
+
+        //8位灰度图调色盘
+        public static ColorPalette GetGrayPalette()
+        {
+            ColorPalette res = new ColorPalette();
+            res.Count = 256;
+            res.palette = new tagRGBQUAD[256];
+            for (byte i = byte.MinValue; i <= byte.MaxValue ; i++)
+            {
+                res.palette[i] = new tagRGBQUAD(i,i,i);
+            } 
+            return res;
+        }
+
+        //8位彩色图调色盘
+        public static ColorPalette GetColorPalette()
+        {
+            ColorPalette res = new ColorPalette();
+            res.Count = 256;
+            res.palette = new tagRGBQUAD[256];
+            // for (byte i = byte.MinValue; i <= byte.MaxValue ; i++)
+            // {
+            //     res.palette[i] = new tagRGBQUAD(i,i,i);
+            // }
+            return res;
         }
     }
 
@@ -215,7 +272,34 @@ namespace ImageProcess
             {
                 cp = new ColorPalette(bi);
                 tempSpan = span.Slice(currentIdx,cp.Count*4);
-                cp.palette = ImageCommon.BytesToInt32Arry(tempSpan.ToArray());
+                int[] structsContainer = ImageCommon.BytesToInt32Arry(tempSpan.ToArray());
+                
+                cp.palette = structsContainer.Select(i=>BitConverter.GetBytes(i)).
+                    Select
+                    (
+                        bgraData => new tagRGBQUAD
+                        {
+                            b = bgraData[0],
+                            g = bgraData[2],
+                            r = bgraData[3],
+                            a = bgraData[4]
+                        }
+                    ).ToArray();
+                // cp.palette = structsContainer.Select
+                // (
+                //     s=>()
+                //     {
+                //         byte[] bgraData = BitConvert.GetBytes(s);
+                //         return new tagRGBQUAD
+                //         {
+                //             b = bgraData[0],
+                //             g = bgraData[2],
+                //             r = bgraData[3],
+                //             a = bgraData[4]
+                //         };
+                //     }
+                // ).ToArray();
+                //cp.palette = ;
                 Console.WriteLine($"{cp.Count}:{cp.palette.Length}:{tempSpan.Length}");
                 DebugMsg.DebugConsoleOut(cp.ToString());
                 currentIdx += tempSpan.Length;             
