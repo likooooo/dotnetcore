@@ -14,7 +14,7 @@ using RuntimeDebug;
 //https://www.cnblogs.com/wanghao-boke/p/11635179.html
 namespace ImageProcess
 {
-    public class ImageAttributeJudge
+    public class ImageAttribute
     {
         public static bool IsContainColorPalette(IImageCore image)
             => image.BitCount<9;
@@ -24,47 +24,7 @@ namespace ImageProcess
 
         public static int GetStride(IImageCore image) 
             =>(((int)(image.Width*image.BitCount + 31))>>5)<<2;
-        
-        #region bytes ->struct    
-        public static readonly List<ushort> FileFilter = new List<ushort>
-        {
-            {19778},{0},{1}
-        };
-
-        public static int GetImageStruct(Span<byte> head,out ImageType type,out ImageFile bf,out ImageFileInfo bfi,out ColorPalette cp,out ImageData data)
-        {
-            int res = 0;
-            bf = default(ImageFile);
-            bfi = default(ImageFileInfo);
-            cp = default(ColorPalette);
-            data = default(ImageData);
-            type = ImageMemoryOpereSet.BytesToStruct<ImageType>(head.Slice(0,2).ToArray());
-            if(!FileFilter.Contains(type.bfType)) return 1;
-            bf = ImageMemoryOpereSet.BytesToStruct<ImageFile>(head.Slice(2,12).ToArray());
-            bfi = ImageMemoryOpereSet.BytesToStruct<ImageFileInfo>(head.Slice(14,40).ToArray());
-            if(bfi.biBitCount<9)
-            {
-                cp = ImageMemoryOpereSet.BytesToStruct<ColorPalette>(head.Slice(54,bf.bfOffBits - 54).ToArray());
-                
-            }
-            else
-            {
-                res = 2;
-            }
-            if(head.Length == bf.bfOffBits)
-            {
-                
-                data.D = new byte[bf.bfSize - bf.bfOffBits];
-                data.D = head.Slice(bf.bfOffBits,data.D.Length).ToArray();
-            }
-            else
-            {
-                res = 3;
-            }
-            return res;
         }
-        #endregion
-    }
 
     public static class ImageMemoryOpereSet
     {
@@ -151,6 +111,79 @@ namespace ImageProcess
             Marshal.FreeHGlobal(p);
             return res;
         }
+
+        #region bytes ->struct    
+        public static readonly List<ushort> FileFilter = new List<ushort>
+        {
+            {19778},{0},{1}
+        };
+
+        public static int ImageToStruct(Span<byte> head,out ImageType type,out ImageFile bf,out ImageFileInfo bfi,out ColorPalette cp,out ImageData data)
+        {
+            int res = 0;
+            bf = default(ImageFile);
+            bfi = default(ImageFileInfo);
+            cp = default(ColorPalette);
+            data = default(ImageData);
+            type = ImageMemoryOpereSet.BytesToStruct<ImageType>(head.Slice(0,2).ToArray());
+            if(!FileFilter.Contains(type.bfType)) return 1;
+            bf = ImageMemoryOpereSet.BytesToStruct<ImageFile>(head.Slice(2,12).ToArray());
+            bfi = ImageMemoryOpereSet.BytesToStruct<ImageFileInfo>(head.Slice(14,40).ToArray());
+            if(bfi.biBitCount<9)
+            {
+                cp = ImageMemoryOpereSet.BytesToStruct<ColorPalette>(head.Slice(54,(int)bf.bfOffBits - 54).ToArray());
+                
+            }
+            else
+            {
+                res = 2;
+            }
+            if(head.Length == bf.bfOffBits)
+            {
+                
+                data.D = new byte[bf.bfSize - bf.bfOffBits];
+                data.D = head.Slice((int)bf.bfOffBits,data.D.Length).ToArray();
+            }
+            else
+            {
+                res = 3;
+            }
+            return res;
+        }
+        public static bool StructToImage(ImageType type,ImageFile bf,ImageFileInfo bfi,ColorPalette cp,ImageData data,out Span<byte> fileSpan)
+        {  
+            fileSpan = new Span<byte>(new byte[(int)bf.bfSize]);
+            byte[] tempBytes = ImageMemoryOpereSet.StructToBytes<ImageType>(type,2);
+            int idx = 0;
+            foreach(var b in tempBytes)
+            {
+                fileSpan[idx++] = b;
+            }
+            tempBytes = ImageMemoryOpereSet.StructToBytes<ImageFile>(bf,12);
+            foreach(var b in tempBytes)
+            {
+                fileSpan[idx++] = b;
+            }
+            tempBytes = ImageMemoryOpereSet.StructToBytes<ImageFileInfo>(bfi,40);
+            foreach(var b in tempBytes)
+            {
+                fileSpan[idx++] = b;
+            }
+            if(cp.palette.Length>0)
+            {
+                foreach(var b in tempBytes)
+                {
+                    fileSpan[idx++] = b;
+                }
+            }
+            foreach(var b in data.D)
+            {
+                fileSpan[idx++] = b;
+            }
+            return idx == bf.bfSize;
+        }
+        #endregion
+
     }
 
     //通过继承重写
@@ -163,6 +196,8 @@ namespace ImageProcess
 
         uint HeadStructSize{get;}
         uint GetHeadStructSize();
+        
+        int BitmapSize{get;}
 
         uint Width{get;}
         uint GetWidth();
@@ -205,6 +240,8 @@ namespace ImageProcess
             return HeadStructSize;
         }
 
+        public int BitmapSize{get;protected set;}
+
         public uint Width{get;protected set;}
         public uint GetWidth()=>(Width =  *((uint*)(_head+18)));
 
@@ -226,8 +263,9 @@ namespace ImageProcess
 
         public IntPtr Scan0{get;protected set;}
         public IntPtr GetScan0()
-        {
-            Scan0 = new IntPtr((void*)(*(_head + HeadStructSize)));
+        {  
+            Console.WriteLine($"##########{(int)_head},{HeadStructSize}");
+            Scan0 = new IntPtr(_head + HeadStructSize);
             return Scan0;
         }
 
@@ -239,30 +277,120 @@ namespace ImageProcess
             this.Width = width;
             this.Height = height;
             this.BitCount = bitcount;
-            Stride = ImageAttributeJudge.GetStride(this);
+            Stride = ImageAttribute.GetStride(this);
 
             
             FileType = 19778;
-            HeadStructSize = 54 + bitcount<9?(bitcount<<2)*4:0;
-            FileBytesSize = Stride*height + HeadStructSize;
+            HeadStructSize = 54 + (bitcount<9?(uint)(bitcount<<2)*4:0);
+            BitmapSize = (int)(Stride*height);
+            FileBytesSize = (uint)BitmapSize + HeadStructSize;
             
             ImageType type = new ImageType
             {
                 bfType = FileType
             };
+            DebugMsg.DebugConsoleOut(type.ToString());
+
             ImageFile bf = new ImageFile
             {
                 bfSize = FileBytesSize,
                 bfReserved = 0,
                 bfOffBits = HeadStructSize
             };
+            DebugMsg.DebugConsoleOut(bf.ToString());
+
             ImageFileInfo bfi = new ImageFileInfo
             {
-                bfSize = FileBytesSize,
-                bfReserved = 0,
-                bfOffBits = HeadStructSize
+                biSize = 40,
+                biWidth = width,
+                biHeight = height,
+                biPlanes = 1,
+                biBitCount = BitCount,
+                biCompression = 0,
+                biSizeImage = 0,
+                biXPelsPerMeter = 0,
+                biYPelsPerMeter = 0,
+                biClrUsed = 0,
+                biClrImportant = 0
             };
-            //out ImageFile bf,out ImageFileInfo bfi,out ColorPalette cp,out ImageData data
+            DebugMsg.DebugConsoleOut(bfi.ToString());
+
+            //调色盘实现
+            ColorPalette cp;
+            switch (BitCount)
+            {
+                case 1:
+                cp = new ColorPalette
+                {
+                    palette = new byte[]//2
+                    {
+                        0,0,0,0,
+                        1,1,1,1
+                    }
+                };
+                break;
+                case 2:
+                cp = new ColorPalette
+                {
+                    palette = new byte[]//4
+                    {
+                        0,0,0,0,
+                        1,1,1,1,
+                        2,2,2,2,
+                        3,3,3,3
+                    }
+                };
+                break;
+                case 3:
+                cp = new ColorPalette
+                {
+                    palette = new byte[]//8
+                    {
+                        0,0,0,0,
+                        1,1,1,1,
+                        2,2,2,2,
+                        3,3,3,3,
+                        4,4,4,4,
+                        5,5,5,5,
+                        6,6,6,6,
+                        7,7,7,7
+                    }
+                };
+                break;
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                cp = new ColorPalette
+                {
+                    palette = new byte[1<<BitCount]
+                };
+                for (int i = 0; i < BitCount; i++)
+                {
+                    cp.palette[i*4  ] = (byte)i;
+                    cp.palette[i*4+1] = (byte)i;
+                    cp.palette[i*4+2] = (byte)i;
+                    cp.palette[i*4+3] = 0;
+                }
+                break;
+                default:
+                cp = new ColorPalette{palette = new byte[0]};
+                break;
+            }
+            DebugMsg.DebugConsoleOut(cp.ToString());
+
+            ImageData data = new ImageData
+            {
+                D = new byte[FileBytesSize - HeadStructSize]
+            };
+            Span<byte> fileData;
+            Console.WriteLine($"#####{ImageMemoryOpereSet.StructToImage(type,bf,bfi,cp,data,out fileData)}");
+            IntPtr p = Marshal.AllocHGlobal(fileData.Length);
+            Marshal.Copy(fileData.ToArray(),0,p,fileData.Length);    
+            DebugMsg.DebugConsoleOut(Stride.ToString());
+            _head = (byte*)p.ToPointer();
+            GetScan0();
         }
 
         public void Dispose()

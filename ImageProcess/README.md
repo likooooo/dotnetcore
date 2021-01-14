@@ -1,5 +1,3 @@
 # ImageProcess
->>- Ìí¼ÓÁËbmpÎÄ¼ş¶ÁÈ¡Àà
->>- ÊµÏÖÁËReadImage(string)/WriteImage(string)
->>- Ìí¼ÓÁËÔ¤¶¨Òå¶şÖµÍ¼/8Î»»Ò¶ÈÍ¼µÄµ÷É«ÅÌ¡££¨8Î»²ÊÉ«Í¼Ã»ÓĞ¸Ã¹¦ÄÜ£¬4Î»Í¼Ò²Ã»ÓĞ¸Ã¹¦ÄÜ£©
->>- 24Î»/8Î»»Ò¶ÈÍ¼/8Î»²ÊÉ«Í¼ µÄDecompose()
+>>- æ·»åŠ äº†bmpæ–‡ä»¶è¯»å–ç±»
+>>- å®ç°äº†CreateEmptyImage/ReadImage(string)/WriteImage(string)

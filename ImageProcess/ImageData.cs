@@ -48,13 +48,13 @@ namespace ImageProcess
     public struct ImageFileInfo
     {
         [JsonInclude]
-        public int biSize;
+        public uint biSize;
 
         [JsonInclude]
-        public int biWidth;
+        public uint biWidth;
 
         [JsonInclude]
-        public int biHeight;
+        public uint biHeight;
 
         //两个 ushort 在字节对齐的时候会放到一起
         [JsonInclude]
@@ -63,22 +63,22 @@ namespace ImageProcess
         public ushort biBitCount;
 
         [JsonInclude]
-        public int biCompression;
+        public uint biCompression;
 
         [JsonInclude]
-        public int biSizeImage;
+        public uint biSizeImage;
 
         [JsonInclude]
-        public int biXPelsPerMeter;
+        public uint biXPelsPerMeter;
 
         [JsonInclude]
-        public int biYPelsPerMeter;
+        public uint biYPelsPerMeter;
 
         [JsonInclude]
-        public int biClrUsed;
+        public uint biClrUsed;
         
         [JsonInclude]
-        public int biClrImportant;
+        public uint biClrImportant;
 
         public override string ToString()
         {
