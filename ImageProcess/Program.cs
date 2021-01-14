@@ -7,15 +7,16 @@ namespace ImageProcess
     {
         static void Main(string[] args)
         {
-            BmpImage bmp = new BmpImage();
-            Console.WriteLine(bmp.ReadImage(@"C:\Users\like\Pictures\1.bmp"));
-            // ImageInfo img = default(ImageInfo);
-            // ImageStream.ReadImage(@"C:\Users\like\Pictures\1.bmp",out img);
-            // ImageInfo gray = default(ImageInfo);
-            // ImageStream.RGB2Gray(img,out gray);
-            // ImageStream.WriteImage(gray,@"C:\Users\like\Pictures\1_gray.bmp");
-            // ImageStream.WriteImage(img,@"C:\Users\like\Pictures\1_copy.bmp");
-            // Console.WriteLine("Hello World!");
+            ImageCore bmp = new ImageCore();
+            // bmp.CreateImage(1024,720,8);
+            // Console.WriteLine(bmp.WriteImage(@"C:\Users\like\Pictures\1024_720_8.bmp"));
+            // bmp = new BmpImage();
+            // bmp.CreateImage(1024,720,24);
+            // Console.WriteLine(bmp.WriteImage(@"C:\Users\like\Pictures\1024_720_24.bmp"));
+            Span<byte> span;
+            bmp.ReadImage(@"C:\Users\like\Pictures\8位Bmp.bmp",out span);
+            //span.Fill(128);
+            bmp.WriteImage(@"C:\Users\like\Pictures\8位Bmp_copy.bmp");
         }
     }
 }

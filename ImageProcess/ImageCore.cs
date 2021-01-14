@@ -14,188 +14,118 @@ using RuntimeDebug;
 //https://www.cnblogs.com/wanghao-boke/p/11635179.html
 namespace ImageProcess
 {
-    [Serializable]
-    internal struct ImageType
+    public class ImageAttributeJudge
     {
-        [JsonInclude]
-        public ushort bfType;
+        public static bool IsContainColorPalette(IImageCore image)
+            => image.BitCount<9;
 
-        public override string ToString()
-        {
-            return JsonSerializer.Serialize(this,new JsonSerializerOptions{WriteIndented = true});
-        }
-    }
+        public static bool IsBmp(IImageCore image)
+            => image.FileType == 19778;
 
-    [Serializable]
-    internal struct ImageFile
-    {
-        [JsonInclude]
-        public int bfSize;
-
-        [JsonInclude]
-        public int bfReserved;
-
-        [JsonInclude]
-        public int bfOffBits;
-
-        public override string ToString()
-        {
-            return JsonSerializer.Serialize(this,new JsonSerializerOptions{WriteIndented = true});
-        }
-    }
-
-
-    [Serializable]
-    internal struct ImageFileInfo
-    {
-        [JsonInclude]
-        public int biSize;
-
-        [JsonInclude]
-        public int biWidth;
-
-        [JsonInclude]
-        public int biHeight;
-
-        //两个 ushort 在字节对齐的时候会放到一起
-        [JsonInclude]
-        public ushort biPlanes;
-        [JsonInclude]
-        public ushort biBitCount;
-
-        [JsonInclude]
-        public int biCompression;
-
-        [JsonInclude]
-        public int biSizeImage;
-
-        [JsonInclude]
-        public int biXPelsPerMeter;
-
-        [JsonInclude]
-        public int biYPelsPerMeter;
-
-        [JsonInclude]
-        public int biClrUsed;
+        public static int GetStride(IImageCore image) 
+            =>(((int)(image.Width*image.BitCount + 31))>>5)<<2;
         
-        [JsonInclude]
-        public int biClrImportant;
-
-        public override string ToString()
+        #region bytes ->struct    
+        public static readonly List<ushort> FileFilter = new List<ushort>
         {
-            return JsonSerializer.Serialize(this,new JsonSerializerOptions{WriteIndented = true});
-        }
-    }
-    
-    [Serializable]
-    internal struct Section 
-    {
-        [JsonInclude]
-        public int a;
+            {19778},{0},{1}
+        };
 
-        [JsonInclude]
-        public int b;
+        public static int GetImageStruct(Span<byte> head,out ImageType type,out ImageFile bf,out ImageFileInfo bfi,out ColorPalette cp,out ImageData data)
+        {
+            int res = 0;
+            bf = default(ImageFile);
+            bfi = default(ImageFileInfo);
+            cp = default(ColorPalette);
+            data = default(ImageData);
+            type = ImageMemoryOpereSet.BytesToStruct<ImageType>(head.Slice(0,2).ToArray());
+            if(!FileFilter.Contains(type.bfType)) return 1;
+            bf = ImageMemoryOpereSet.BytesToStruct<ImageFile>(head.Slice(2,12).ToArray());
+            bfi = ImageMemoryOpereSet.BytesToStruct<ImageFileInfo>(head.Slice(14,40).ToArray());
+            if(bfi.biBitCount<9)
+            {
+                cp = ImageMemoryOpereSet.BytesToStruct<ColorPalette>(head.Slice(54,bf.bfOffBits - 54).ToArray());
+                
+            }
+            else
+            {
+                res = 2;
+            }
+            if(head.Length == bf.bfOffBits)
+            {
+                
+                data.D = new byte[bf.bfSize - bf.bfOffBits];
+                data.D = head.Slice(bf.bfOffBits,data.D.Length).ToArray();
+            }
+            else
+            {
+                res = 3;
+            }
+            return res;
+        }
+        #endregion
+    }
+
+    public static class ImageMemoryOpereSet
+    {
+        /// <summary>
+        /// 结构体转byte[]
+        /// </summary>
+        public static byte[] StructToBytes<TStruct>(TStruct t) where TStruct : struct
+        {
+            int structSize = Marshal.SizeOf(typeof(TStruct));
+            byte[] data = new byte[structSize];
+
+            IntPtr p = Marshal.AllocHGlobal(structSize);
+            Marshal.StructureToPtr<TStruct>(t,p ,false);
+            Marshal.Copy(p,data,0,structSize);
+            Marshal.FreeHGlobal(p);
+            return data;
+        }
+        public static byte[] StructToBytes<TStruct>(TStruct t,int structSize) where TStruct : struct
+        {
+            byte[] data = new byte[structSize];
+
+            IntPtr p = Marshal.AllocHGlobal(structSize);
+            Marshal.StructureToPtr<TStruct>(t,p ,false);
+            Marshal.Copy(p,data,0,structSize);
+            Marshal.FreeHGlobal(p);
+            return data;
+        }
+
+        /// <summary>
+        /// byte[]转结构体
+        /// </summary>
+        public static TStruct BytesToStruct<TStruct>(byte[] data) where TStruct : struct
+        {
+            int structSize = Marshal.SizeOf(typeof(TStruct));
+            if(structSize>data.Length)
+            {
+                throw new Exception($"结构体尺寸超出源数据{structSize} > {data.Length}");
+            }
+            IntPtr p = Marshal.AllocHGlobal(structSize);
+            TStruct t = default(TStruct);
+
+            Marshal.Copy(data,0,p,data.Length);
+            t = Marshal.PtrToStructure<TStruct>(p);
+            Marshal.FreeHGlobal(p);
+            return t;
+        }
+
+        /// <summary>
+        /// memory->Disk
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <param name="{System.IO.File.WriteAllBytes(filepath"></param>
+        public static void BytesToFile(string filepath,byte[] data) {System.IO.File.WriteAllBytes(filepath,data);}
         
-        [JsonInclude]
-        public int c;
-
-        public override string ToString()
-        {
-            return JsonSerializer.Serialize(this,new JsonSerializerOptions{WriteIndented = true});
-        }
-    }
-
-    [Serializable]
-    public struct tagRGBQUAD 
-    {
-        public byte b;
-        public byte g;
-        public byte r;
-        public byte a;
-        public tagRGBQUAD(byte b,byte g,byte r)
-        {
-            this.b = b;
-            this.g = g;
-            this.r = r;
-            this.a = 0;
-        }
-    }
-
-
-    [Serializable]
-    internal class ColorPalette
-    {
-        [NonSerialized]
-        public tagRGBQUAD[] palette;
-        public int Count{get;private set;}
-        public ColorPalette(){}
-        public ColorPalette(ImageFileInfo info)
-        {
-            Count = 1<<info.biBitCount;
-            palette = new tagRGBQUAD[Count];
-        }
-
-        public override string ToString()
-        {
-            return JsonSerializer.Serialize(this,new JsonSerializerOptions{WriteIndented = true});
-        }
-
-        //1位二值图
-        public static ColorPalette GetBinaryImagePalette()
-        {
-            ColorPalette res = new ColorPalette();
-            res.Count = 2;
-            res.palette = new tagRGBQUAD[]
-            {
-                new tagRGBQUAD(0,0,0),
-                new tagRGBQUAD(1,1,1)
-            };
-            return res;
-        }
-
-        //8位灰度图调色盘
-        public static ColorPalette GetGrayPalette()
-        {
-            ColorPalette res = new ColorPalette();
-            res.Count = 256;
-            res.palette = new tagRGBQUAD[256];
-            for (byte i = byte.MinValue; i <= byte.MaxValue ; i++)
-            {
-                res.palette[i] = new tagRGBQUAD(i,i,i);
-            } 
-            return res;
-        }
-
-        //8位彩色图调色盘
-        public static ColorPalette GetColorPalette()
-        {
-            ColorPalette res = new ColorPalette();
-            res.Count = 256;
-            res.palette = new tagRGBQUAD[256];
-            // for (byte i = byte.MinValue; i <= byte.MaxValue ; i++)
-            // {
-            //     res.palette[i] = new tagRGBQUAD(i,i,i);
-            // }
-            return res;
-        }
-    }
-
-    [Serializable]
-    public class ImageData
-    {
-        public byte[] D{get;set;}
-        public int Stride{get;protected set;}
-        public int Count{get;protected set;}
-        protected ImageData(){}
-
-        public override string ToString()
-        {
-            return JsonSerializer.Serialize(this,new JsonSerializerOptions{WriteIndented = true});
-        }
-    }
-
-    public class ImageCommon
-    {
+        /// <summary>
+        /// disk->memory
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <returns></returns>
+        public static byte[] FileToBytes(string filepath)  =>System.IO.File.ReadAllBytes(filepath);
+        
         //p为非托管内存
         public static TStruct PtrToStruct<TStruct>(IntPtr p) where TStruct : struct
         {
@@ -205,6 +135,12 @@ namespace ImageProcess
             return t;
         }
 
+        public static IntPtr StructToPtr<TStruct>(TStruct t,int structSize)where TStruct:struct
+        {
+            IntPtr p = Marshal.AllocHGlobal(structSize);
+            Marshal.StructureToPtr<TStruct>(t,p ,false);
+            return p;
+        }
         public static int[] BytesToInt32Arry(byte[] bytes)
         {
             int resCount = bytes.Length/4;
@@ -215,123 +151,164 @@ namespace ImageProcess
             Marshal.FreeHGlobal(p);
             return res;
         }
-
-        /// <summary>
-        /// 4字节对齐
-        /// </summary>
-        /// <param name="width"></param>
-        /// <param name="bitCount"></param>
-        /// <returns></returns>
-        public static int GetStride(int width,ushort bitCount) =>(((width*bitCount) + 31)>>5)<<2;
-    
     }
 
-    public class BmpImage:ImageData
+    //通过继承重写
+    public interface IImageCore:IDisposable
     {
-        internal ImageType type;
-        internal ImageFile bf;
-        internal ImageFileInfo bi;
-        internal Section s;
-        internal ColorPalette cp;
+        ushort FileType{get;}
 
-        public BmpImage():base(){}
+        uint FileBytesSize{get;}
+        uint GetFileBytesSize();
 
-        public int ReadImage(string filePath)
+        uint HeadStructSize{get;}
+        uint GetHeadStructSize();
+
+        uint Width{get;}
+        uint GetWidth();
+
+        uint Height{get;}
+        uint GetHeight();
+
+        ushort BitCount{get;}
+        ushort GetBitCount();
+
+        int Stride{get;}
+
+        IntPtr Scan0{get;}
+        IntPtr GetScan0();
+
+        void ReadImage(string filepath,out Span<byte> span);
+        void WriteImage(string filePath);
+        void GenEmptyImage(uint width,uint height,ushort bitcount,out IImageCore img);
+        //void Decompose3(out IImageCore r,out IImageCore g,out IImageCore b);
+    }
+
+    //bmp文件的IImageCore的实现
+    public unsafe class ImageCore:IImageCore
+    {
+        protected byte* _head;
+
+        public ushort FileType{get;protected set;}
+
+        public uint FileBytesSize{get;protected set;}
+        public uint GetFileBytesSize()
         {
-            int currentIdx = 0;
-            Span<byte> span = new Span<byte>(StreamHelper.FileToBytes(filePath));
-            Span<byte> tempSpan = span.Slice(currentIdx,2);
-            type = StreamHelper.BytesToStruct<ImageType>(tempSpan.ToArray());
-            if(!IsBmp())
-            {
-                DebugMsg.DebugConsoleOut($"Is not bmp:{type.bfType}");
-                return 1;
-            }
-            currentIdx += 2;
-
-            tempSpan = span.Slice(currentIdx,12);
-            bf = StreamHelper.BytesToStruct<ImageFile>(tempSpan.ToArray());
-            DebugMsg.DebugConsoleOut(bf.ToString());
-            currentIdx += 12;
-
-            tempSpan = span.Slice(currentIdx,40);
-            bi = StreamHelper.BytesToStruct<ImageFileInfo>(tempSpan.ToArray());
-            DebugMsg.DebugConsoleOut(bi.ToString());
-            currentIdx += 40;
-
-            //可有可无
-            if(bi.biSize == 56)
-            {
-                tempSpan = span.Slice(currentIdx,16);
-                s = StreamHelper.BytesToStruct<Section>(tempSpan.ToArray());
-                DebugMsg.DebugConsoleOut(s.ToString());
-                currentIdx += 16;
-            }
-            
-            if(bi.biBitCount == 1 ||bi.biBitCount == 4 ||bi.biBitCount == 8)
-            {
-                cp = new ColorPalette(bi);
-                tempSpan = span.Slice(currentIdx,cp.Count*4);
-                int[] structsContainer = ImageCommon.BytesToInt32Arry(tempSpan.ToArray());
-                
-                cp.palette = structsContainer.Select(i=>BitConverter.GetBytes(i)).
-                    Select
-                    (
-                        bgraData => new tagRGBQUAD
-                        {
-                            b = bgraData[0],
-                            g = bgraData[2],
-                            r = bgraData[3],
-                            a = bgraData[4]
-                        }
-                    ).ToArray();
-                // cp.palette = structsContainer.Select
-                // (
-                //     s=>()
-                //     {
-                //         byte[] bgraData = BitConvert.GetBytes(s);
-                //         return new tagRGBQUAD
-                //         {
-                //             b = bgraData[0],
-                //             g = bgraData[2],
-                //             r = bgraData[3],
-                //             a = bgraData[4]
-                //         };
-                //     }
-                // ).ToArray();
-                //cp.palette = ;
-                Console.WriteLine($"{cp.Count}:{cp.palette.Length}:{tempSpan.Length}");
-                DebugMsg.DebugConsoleOut(cp.ToString());
-                currentIdx += tempSpan.Length;             
-            }
-            else
-            {
-                cp = null;
-            }
-            base.Stride = ImageCommon.GetStride(bi.biWidth,bi.biBitCount);
-            base.Count = Stride*bi.biHeight;
-            DebugMsg.DebugConsoleOut(base.ToString());
-            
-            if(Count == span.Length - currentIdx)
-            {
-                DebugMsg.DebugConsoleOut($"Count:{Count} == ExistDataLength:{span.Length - currentIdx}");
-                base.D = new byte[Count];
-                base.D = span.Slice(currentIdx,Count).ToArray();
-                currentIdx += Count;
-                return 0;
-            }
-            else
-            {
-                DebugMsg.DebugConsoleOut($"Count:{Count} != ExistDataLength:{span.Length - currentIdx}");
-                return 1;
-            }
+            FileBytesSize = *((uint*)(_head+2));
+            return FileBytesSize;
         }
 
-        /// <summary>
-        /// 'BM'
-        /// </summary>
-        /// <returns></returns>
-         public bool IsBmp()=> 19778 == type.bfType;
+        public uint HeadStructSize{get;protected set;}
+        public uint GetHeadStructSize()
+        {
+            HeadStructSize = *((uint*)(_head+10));
+            return HeadStructSize;
+        }
+
+        public uint Width{get;protected set;}
+        public uint GetWidth()=>(Width =  *((uint*)(_head+18)));
+
+        public uint Height{get;protected set;}
+        public uint GetHeight()
+        {
+            Height =  *((uint*)(_head+22));
+            return Height;
+        }
+
+        public ushort BitCount{get;protected set;}
+        public ushort GetBitCount()
+        {
+            BitCount =  *((ushort*)(_head+28));
+            return BitCount;
+        }
+
+        public int Stride{get;protected set;}
+
+        public IntPtr Scan0{get;protected set;}
+        public IntPtr GetScan0()
+        {
+            Scan0 = new IntPtr((void*)(*(_head + HeadStructSize)));
+            return Scan0;
+        }
+
+
+        public ImageCore(){}
+        public ImageCore(uint width,uint height,ushort bitcount)
+        {
+            
+            this.Width = width;
+            this.Height = height;
+            this.BitCount = bitcount;
+            Stride = ImageAttributeJudge.GetStride(this);
+
+            
+            FileType = 19778;
+            HeadStructSize = 54 + bitcount<9?(bitcount<<2)*4:0;
+            FileBytesSize = Stride*height + HeadStructSize;
+            
+            ImageType type = new ImageType
+            {
+                bfType = FileType
+            };
+            ImageFile bf = new ImageFile
+            {
+                bfSize = FileBytesSize,
+                bfReserved = 0,
+                bfOffBits = HeadStructSize
+            };
+            ImageFileInfo bfi = new ImageFileInfo
+            {
+                bfSize = FileBytesSize,
+                bfReserved = 0,
+                bfOffBits = HeadStructSize
+            };
+            //out ImageFile bf,out ImageFileInfo bfi,out ColorPalette cp,out ImageData data
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        public void GenEmptyImage(uint width,uint height,ushort bitcount,out IImageCore img)
+        {
+            img = null;
+        }
+
+        public void ReadImage(string filePath,out Span<byte> span)
+        {
+            byte[] data = ImageMemoryOpereSet.FileToBytes(filePath);
+            IntPtr p = Marshal.AllocHGlobal(data.Length);
+            Marshal.Copy(data,0,p,data.Length);     
+            span = new Span<byte>(p.ToPointer(),data.Length);
+            _head = (byte*)p.ToPointer();
+            DebugMsg.DebugConsoleOut($"ReadImage=>readed data length :{span.Length}");
+
+            GetFileBytesSize();
+            GetHeadStructSize();
+            GetWidth();
+            GetHeight();
+            GetBitCount();
+            GetScan0();
+        }
+
+        public void WriteImage(string filePath)
+        {
+            Span<byte> span = new Span<byte>((void*)_head,(int)FileBytesSize);
+            ImageMemoryOpereSet.BytesToFile(filePath,span.ToArray());
+            DebugMsg.DebugConsoleOut($"WriteImage=>Writed data length :{FileBytesSize}");
+        }
         
+        protected virtual void Dispose(bool disposeing)
+        {
+            Scan0 = IntPtr.Zero;
+            Stride = 0;
+            BitCount = 0;
+            Height = 0;
+            HeadStructSize = 0;
+            FileBytesSize = 0;
+            Marshal.FreeHGlobal(new IntPtr(_head));
+        }
     }
 }
