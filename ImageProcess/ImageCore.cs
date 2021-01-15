@@ -17,14 +17,14 @@ namespace ImageProcess
     public class ImageAttribute
     {
         public static bool IsContainColorPalette(IImageCore image)
-            => image.BitCount<9;
+            => image.BitCount < 9;
 
         public static bool IsBmp(IImageCore image)
             => image.FileType == 19778;
 
         public static int GetStride(IImageCore image) 
             =>(((int)(image.Width*image.BitCount + 31))>>5)<<2;
-        }
+    }
 
     public static class ImageMemoryOpereSet
     {
@@ -42,13 +42,13 @@ namespace ImageProcess
             Marshal.FreeHGlobal(p);
             return data;
         }
-        public static byte[] StructToBytes<TStruct>(TStruct t,int structSize) where TStruct : struct
+        public static byte[] StructToBytes<TStruct>(TStruct t,int size) where TStruct : struct
         {
-            byte[] data = new byte[structSize];
+            byte[] data = new byte[size];
 
-            IntPtr p = Marshal.AllocHGlobal(structSize);
+            IntPtr p = Marshal.AllocHGlobal(size);
             Marshal.StructureToPtr<TStruct>(t,p ,false);
-            Marshal.Copy(p,data,0,structSize);
+            Marshal.Copy(p,data,0,size);
             Marshal.FreeHGlobal(p);
             return data;
         }
@@ -171,7 +171,7 @@ namespace ImageProcess
             }
             if(cp.palette.Length>0)
             {
-                foreach(var b in tempBytes)
+                 foreach(var b in cp.palette)
                 {
                     fileSpan[idx++] = b;
                 }
@@ -197,6 +197,7 @@ namespace ImageProcess
         uint HeadStructSize{get;}
         uint GetHeadStructSize();
         
+        int PaletteSize{get;}
         int BitmapSize{get;}
 
         uint Width{get;}
@@ -210,6 +211,11 @@ namespace ImageProcess
 
         int Stride{get;}
 
+        IntPtr FileHead{get;}
+
+        IntPtr Palette{get;}
+        IntPtr GetPalette();
+
         IntPtr Scan0{get;}
         IntPtr GetScan0();
 
@@ -222,10 +228,19 @@ namespace ImageProcess
     //bmp文件的IImageCore的实现
     public unsafe class ImageCore:IImageCore
     {
+        //文件内存的非托管指针
         protected byte* _head;
-
+        #region IImageCore属性接口的实现
+        /// <summary>
+        /// 文件类型
+        /// </summary>
+        /// <value></value>
         public ushort FileType{get;protected set;}
 
+        /// <summary>
+        /// 整个文件大小
+        /// </summary>
+        /// <value></value>
         public uint FileBytesSize{get;protected set;}
         public uint GetFileBytesSize()
         {
@@ -233,6 +248,10 @@ namespace ImageProcess
             return FileBytesSize;
         }
 
+        /// <summary>
+        /// 图像配置文件大小
+        /// </summary>
+        /// <value></value>
         public uint HeadStructSize{get;protected set;}
         public uint GetHeadStructSize()
         {
@@ -240,6 +259,16 @@ namespace ImageProcess
             return HeadStructSize;
         }
 
+        /// <summary>
+        /// 调色盘长度，没有调色盘 则为0
+        /// </summary>
+        /// <value></value>
+        public int PaletteSize{get;protected set;}
+
+        /// <summary>
+        /// 图像区域的大小
+        /// </summary>
+        /// <value></value>
         public int BitmapSize{get;protected set;}
 
         public uint Width{get;protected set;}
@@ -252,6 +281,10 @@ namespace ImageProcess
             return Height;
         }
 
+        /// <summary>
+        /// 一个像素的位深度
+        /// </summary>
+        /// <value></value>
         public ushort BitCount{get;protected set;}
         public ushort GetBitCount()
         {
@@ -259,46 +292,74 @@ namespace ImageProcess
             return BitCount;
         }
 
+        /// <summary>
+        /// 一整行的位深度
+        /// </summary>
+        /// <value></value>
         public int Stride{get;protected set;}
 
+        public IntPtr FileHead{get => new IntPtr((void*)_head);}
+
+        /// <summary>
+        /// 调色盘指针
+        /// </summary>
+        /// <value></value>
+        public IntPtr Palette{get;protected set;}
+        public IntPtr GetPalette()
+        {
+            Palette = PaletteSize>0? new IntPtr(_head + 54): default(IntPtr);
+            return Palette;
+        }
+
+        /// <summary>
+        /// 位图指针
+        /// </summary>
+        /// <value></value>
         public IntPtr Scan0{get;protected set;}
         public IntPtr GetScan0()
         {  
-            Console.WriteLine($"##########{(int)_head},{HeadStructSize}");
             Scan0 = new IntPtr(_head + HeadStructSize);
             return Scan0;
         }
 
+        #endregion
 
+        #region 构造函数
         public ImageCore(){}
-        public ImageCore(uint width,uint height,ushort bitcount)
+
+        /// <summary>
+        /// 初始化一张空图片，并设定初始像素
+        /// </summary>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <param name="bitcount"></param>
+        /// <param name="initColor"></param>
+        public ImageCore(uint width,uint height,ushort bitcount,byte initColor = 0)
         {
-            
+            FileType = 19778;
             this.Width = width;
             this.Height = height;
             this.BitCount = bitcount;
             Stride = ImageAttribute.GetStride(this);
-
-            
-            FileType = 19778;
-            HeadStructSize = 54 + (bitcount<9?(uint)(bitcount<<2)*4:0);
-            BitmapSize = (int)(Stride*height);
+            BitmapSize = (int)(Stride*height);  
+            PaletteSize = (1<<bitcount)*4;
+            HeadStructSize = 54 + (uint)PaletteSize;
             FileBytesSize = (uint)BitmapSize + HeadStructSize;
-            
+            Console.WriteLine($"{Stride}-{BitmapSize} - {HeadStructSize}");
+    
+            //1
             ImageType type = new ImageType
             {
                 bfType = FileType
             };
-            DebugMsg.DebugConsoleOut(type.ToString());
-
+            //2
             ImageFile bf = new ImageFile
             {
                 bfSize = FileBytesSize,
                 bfReserved = 0,
                 bfOffBits = HeadStructSize
             };
-            DebugMsg.DebugConsoleOut(bf.ToString());
-
+            //3
             ImageFileInfo bfi = new ImageFileInfo
             {
                 biSize = 40,
@@ -313,91 +374,71 @@ namespace ImageProcess
                 biClrUsed = 0,
                 biClrImportant = 0
             };
-            DebugMsg.DebugConsoleOut(bfi.ToString());
-
-            //调色盘实现
-            ColorPalette cp;
-            switch (BitCount)
+            //4 调色盘实现
+            ColorPalette cp = new ColorPalette
             {
-                case 1:
-                cp = new ColorPalette
-                {
-                    palette = new byte[]//2
-                    {
-                        0,0,0,0,
-                        1,1,1,1
-                    }
-                };
-                break;
-                case 2:
-                cp = new ColorPalette
-                {
-                    palette = new byte[]//4
-                    {
-                        0,0,0,0,
-                        1,1,1,1,
-                        2,2,2,2,
-                        3,3,3,3
-                    }
-                };
-                break;
-                case 3:
-                cp = new ColorPalette
-                {
-                    palette = new byte[]//8
-                    {
-                        0,0,0,0,
-                        1,1,1,1,
-                        2,2,2,2,
-                        3,3,3,3,
-                        4,4,4,4,
-                        5,5,5,5,
-                        6,6,6,6,
-                        7,7,7,7
-                    }
-                };
-                break;
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                case 8:
-                cp = new ColorPalette
-                {
-                    palette = new byte[1<<BitCount]
-                };
-                for (int i = 0; i < BitCount; i++)
-                {
-                    cp.palette[i*4  ] = (byte)i;
-                    cp.palette[i*4+1] = (byte)i;
-                    cp.palette[i*4+2] = (byte)i;
-                    cp.palette[i*4+3] = 0;
-                }
-                break;
-                default:
-                cp = new ColorPalette{palette = new byte[0]};
-                break;
+                palette = new byte[PaletteSize]
+            };
+            byte step = (byte)(255*1/(1<<bitcount-1));   
+            int idx = 0; 
+            byte vale = 0;
+            while(idx < PaletteSize)
+            {
+                cp.palette[idx++] = vale; 
+                cp.palette[idx++] = vale; 
+                cp.palette[idx++] = vale; 
+                cp.palette[idx++] = 0; 
+                vale += step;
             }
-            DebugMsg.DebugConsoleOut(cp.ToString());
-
+            //5 Data
             ImageData data = new ImageData
             {
-                D = new byte[FileBytesSize - HeadStructSize]
+                D = new byte[BitmapSize]
             };
+            //Log
+            DebugMsg.DebugConsoleOut(type.ToString());
+            DebugMsg.DebugConsoleOut(bf.ToString());
+            DebugMsg.DebugConsoleOut(bfi.ToString());
+            DebugMsg.DebugConsoleOut(cp.ToString());
+
             Span<byte> fileData;
-            Console.WriteLine($"#####{ImageMemoryOpereSet.StructToImage(type,bf,bfi,cp,data,out fileData)}");
+            ImageMemoryOpereSet.StructToImage(type,bf,bfi,cp,data,out fileData);        
+            if(initColor>0)
+            {
+                (fileData.Slice((int)HeadStructSize,BitmapSize)).Fill(initColor);//1111 1111
+            }
+
             IntPtr p = Marshal.AllocHGlobal(fileData.Length);
-            Marshal.Copy(fileData.ToArray(),0,p,fileData.Length);    
-            DebugMsg.DebugConsoleOut(Stride.ToString());
-            _head = (byte*)p.ToPointer();
+            Marshal.Copy(fileData.ToArray(),0,p,fileData.Length);   
+            unsafe
+            {
+                _head = (byte*)p.ToPointer();
+                Palette = PaletteSize>0? new IntPtr(_head + 54): default(IntPtr);
+            } 
+            GetPalette();
             GetScan0();
         }
+        #endregion
 
+        #region IDisposable接口实现
+        
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+        
+        protected virtual void Dispose(bool disposeing)
+        {
+            Scan0 = IntPtr.Zero;
+            Stride = 0;
+            BitCount = 0;
+            Height = 0;
+            HeadStructSize = 0;
+            FileBytesSize = 0;
+            Marshal.FreeHGlobal(new IntPtr(_head));
+        }
+        #endregion
 
         public void GenEmptyImage(uint width,uint height,ushort bitcount,out IImageCore img)
         {
@@ -418,6 +459,7 @@ namespace ImageProcess
             GetWidth();
             GetHeight();
             GetBitCount();
+            GetPalette();
             GetScan0();
         }
 
@@ -426,17 +468,6 @@ namespace ImageProcess
             Span<byte> span = new Span<byte>((void*)_head,(int)FileBytesSize);
             ImageMemoryOpereSet.BytesToFile(filePath,span.ToArray());
             DebugMsg.DebugConsoleOut($"WriteImage=>Writed data length :{FileBytesSize}");
-        }
-        
-        protected virtual void Dispose(bool disposeing)
-        {
-            Scan0 = IntPtr.Zero;
-            Stride = 0;
-            BitCount = 0;
-            Height = 0;
-            HeadStructSize = 0;
-            FileBytesSize = 0;
-            Marshal.FreeHGlobal(new IntPtr(_head));
         }
     }
 }

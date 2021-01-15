@@ -12,7 +12,7 @@ namespace ImageProcess
             // bmp.ReadImage(@"C:\Users\like\Pictures\8位Bmp.bmp",out span);
             // //span.Fill(128);
             // bmp.WriteImage(@"C:\Users\like\Pictures\8位Bmp_copy.bmp");
-            CreateImage();
+            ImageObjectTest();
         }
 
         static void CreateImage()
@@ -36,6 +36,26 @@ namespace ImageProcess
                 bmp.WriteImage("bin/Debug/net5.0/300_200_24_Line.bmp");
             }    
 
+        }
+
+        static void ImageObjectTest()
+        {
+            using(ImageCore black = new ImageCore(300,200,1))
+            {
+                black.WriteImage("bin/Debug/net5.0/300_200_Binaray_Black.bmp");
+            }
+            using(ImageCore white = new ImageCore(300,200,1,255))
+            {
+                white.WriteImage("bin/Debug/net5.0/300_200_Binaray_White.bmp");
+            }
+            using(ImageCore black = new ImageCore(300,200,8))
+            {
+                black.WriteImage("bin/Debug/net5.0/300_200_8_Black.bmp");
+            }
+            using(ImageCore white = new ImageCore(300,200,8,255))
+            {
+                white.WriteImage("bin/Debug/net5.0/300_200_8_White.bmp");
+            }
         }
     }
 }
