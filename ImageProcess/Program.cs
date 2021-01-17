@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Drawing;
-//dotnet add package System.Drawing.Common
+using ImageProcess.Sample;
+
 namespace ImageProcess
 {
     class Program
     {
         static void Main(string[] args)
         {
-            // ImageCore bmp = new ImageCore();
-            // Span<byte> span;
-            // bmp.ReadImage(@"C:\Users\like\Pictures\8位Bmp.bmp",out span);
-            // //span.Fill(128);
-            // bmp.WriteImage(@"C:\Users\like\Pictures\8位Bmp_copy.bmp");
-            ImageObjectTest();
+            ExtentionOperateSetSample.Decompose3_Sample();
         }
 
         static void CreateImage()
@@ -39,23 +35,37 @@ namespace ImageProcess
         }
 
         static void ImageObjectTest()
-        {
-            using(ImageCore black = new ImageCore(300,200,1))
-            {
-                black.WriteImage("bin/Debug/net5.0/300_200_Binaray_Black.bmp");
-            }
-            using(ImageCore white = new ImageCore(300,200,1,255))
-            {
-                white.WriteImage("bin/Debug/net5.0/300_200_Binaray_White.bmp");
-            }
-            using(ImageCore black = new ImageCore(300,200,8))
-            {
-                black.WriteImage("bin/Debug/net5.0/300_200_8_Black.bmp");
-            }
-            using(ImageCore white = new ImageCore(300,200,8,255))
-            {
-                white.WriteImage("bin/Debug/net5.0/300_200_8_White.bmp");
-            }
+        { 
+            Image_8BitGray gray = new Image_8BitGray(300,200);
+            // using(ImageCore black = new ImageCore(300,200,1))
+            // {
+            //     black.WriteImage("bin/Debug/net5.0/300_200_Binaray_Black.bmp");
+            // }
+            // using(ImageCore white = new ImageCore(300,200,1,255))
+            // {
+            //     white.WriteImage("bin/Debug/net5.0/300_200_Binaray_White.bmp");
+            // }
+            // using(ImageCore gray = new ImageCore(300,200,24))
+            // {
+            //     Span<byte> scan0;
+            //     unsafe
+            //     {
+            //        scan0 = new Span<byte>(gray.Scan0.ToPointer(),gray.BitmapSize);
+            //     } 
+            //     for (int i = 0; i < gray.Height; i++)
+            //     {
+            //         scan0.Slice(i*gray.Stride,gray.Stride).Fill((byte)i);
+            //     }
+            //     gray.WriteImage("bin/Debug/net5.0/300_200_24_gray.bmp");
+            // }
+        }
+
+        //通过disk->memory->disk测试了读写的正确性
+        static void ReadWriteImage()
+        {      
+            ImageCore bmp = new ImageCore();
+            bmp.ReadImage("bin/Debug/net5.0/300_200_24_gray.bmp");
+            bmp.WriteImage("bin/Debug/net5.0/300_200_24_gray_copy.bmp");
         }
     }
 }

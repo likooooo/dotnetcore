@@ -15,21 +15,13 @@ namespace ImageProcess
     /// 1<<1 = 2位深度
     /// 2^1 = 2色度
     /// </summary>
-    public class BinarayImage:ImageCore,IImageCore
+    public class BinaryImage:ImageCore,IImageCore
     {
-        public BinarayImage(uint width,uint height,byte initColor = 0):base()
+        public BinaryImage(int width,int height,byte initColor = 0):base()
         {
-            FileType = 19778;
-            this.Width = width;
-            this.Height = height;
-            this.BitCount = 1;
-            Stride = ImageAttribute.GetStride(this);
-            BitmapSize = (int)(Stride*height);  
-            HeadStructSize = 64;//54+ (1<<1)*4
-            FileBytesSize = (uint)BitmapSize + HeadStructSize;
-            PaletteSize = 8;
-            Console.WriteLine($"{Stride}-{BitmapSize} - {HeadStructSize}");
-    
+            InitImageData(width,height,2);
+            
+            #region caculate head
             //1
             ImageType type = new ImageType
             {
@@ -71,23 +63,28 @@ namespace ImageProcess
             DebugMsg.DebugConsoleOut(bf.ToString());
             DebugMsg.DebugConsoleOut(bfi.ToString());
             DebugMsg.DebugConsoleOut(cp.ToString());
-
+            #endregion
+            
             Span<byte> fileData;
-            ImageMemoryOpereSet.StructToImage(type,bf,bfi,cp,data,out fileData);        
+            #region heap->stack
+            ImageMemoryOpereSet.StructToSpan(type,bf,bfi,cp,data,out fileData);        
             if(initColor>0)
             {
-                (fileData.Slice((int)HeadStructSize,BitmapSize)).Fill(255);
+                (fileData.Slice((int)HeadStructSize,BitmapSize)).Fill(initColor);
             }
+            #endregion
+            
+            InitUnmanagedMen(fileData.ToArray());
+        }
+    
+        public override void Decompose3(out IImageCore r,out IImageCore g,out IImageCore b)
+        {
+            throw new Exception("BinaryImage CANNOT Use Decompose3");
+        }
 
-            IntPtr p = Marshal.AllocHGlobal(fileData.Length);
-            Marshal.Copy(fileData.ToArray(),0,p,fileData.Length);   
-            unsafe
-            {
-                _head = (byte*)p.ToPointer();
-                Palette = PaletteSize>0? new IntPtr(_head + 54): default(IntPtr);
-            } 
-            GetPalette();
-            GetScan0();
+        public override void Rgb1ToGray(out IImageCore gray)
+        {
+            throw new Exception("BinaryImage CANNOT Use Rgb1ToGray");
         }
     }
 }

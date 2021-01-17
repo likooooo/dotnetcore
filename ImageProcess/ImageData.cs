@@ -14,6 +14,17 @@ using RuntimeDebug;
 //https://www.cnblogs.com/wanghao-boke/p/11635179.html
 namespace ImageProcess
 {
+    // 0 —— RGB方式
+    // 1 —— 8bpp的run-length-encoding方式
+    // 2 —— 4bpp的run-length-encoding方式
+    // 3 —— bit-fields方式
+    public enum ImageCompressionType
+    {
+        rgb = 0,
+        rle_8bpp,
+        rle_4bpp,
+        bitFields
+    }  
     [Serializable]
     public struct ImageType
     {
@@ -51,10 +62,10 @@ namespace ImageProcess
         public uint biSize;
 
         [JsonInclude]
-        public uint biWidth;
+        public int biWidth;
 
         [JsonInclude]
-        public uint biHeight;
+        public int biHeight;
 
         //两个 ushort 在字节对齐的时候会放到一起
         [JsonInclude]

@@ -14,7 +14,9 @@ namespace ImageProcess
     //https://www.cnblogs.com/wanghao-boke/p/11635179.html
     public interface IOperateSet
     {
-        int Decompose(out IImageCore r,out IImageCore g,out IImageCore b);
-        int RgbToGray(IImageCore r,ImageCore g,IImageCore b,out IImageCore grayImage);
+        void ReadImage(string filepath);
+        void WriteImage(string filePath);
+        void Decompose3(out IImageCore r,out IImageCore g,out IImageCore b);
+        void Rgb1ToGray(out IImageCore grayImage);
     }
 }
