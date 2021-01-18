@@ -8,7 +8,7 @@ namespace ImageProcess
     {
         static void Main(string[] args)
         {
-            ExtentionOperateSetSample.Decompose3_Sample();
+            ExtentionOperateSetSample.Threshold_Sample();
         }
 
         static void CreateImage()

@@ -221,7 +221,7 @@ namespace ImageProcess
     }
 
     //通过继承重写
-    public interface IImageCore:IDisposable
+    public interface IImageCore:IDisposable,IOperateSet
     {
         ushort FileType{get;}
         uint FileBytesSize{get;}
@@ -240,13 +240,10 @@ namespace ImageProcess
         IntPtr Scan0{get;}
 
         int GetPixelOffset(int x,int y);
-
-        void ReadImage(string filePath);
-        void WriteImage(string filePath);
     }
 
     //bmp文件的IImageCore的实现
-    public unsafe class ImageCore:IImageCore,IOperateSet
+    public unsafe class ImageCore:IImageCore
     {
         //文件内存的非托管指针
         protected byte* _head;
@@ -372,6 +369,15 @@ namespace ImageProcess
         {
             this.Rgb1ToGray_24(out grayImage);
         }
+
+        public virtual void Threshold(byte minVal, out IImageCore binaryImg)
+        {
+            if(BitCount >8)
+            {
+                throw new Exception("Only Gray Image Can Use Threshold");
+            }
+            this.Threshold_8(minVal,out binaryImg);
+        }
         #endregion
 
         #region IDisposable接口实现     
@@ -436,7 +442,7 @@ namespace ImageProcess
             this.BitCount = bitcount;
             Compression = ImageCompressionType.rgb;
 
-            ColumnByteSize = Width*BitCount>>8;  
+            ColumnByteSize =  Width*(BitCount>>3);  
             Stride = ((Width*BitCount + 31)>>5)<<2;
             SkipByteCount = Stride - ColumnByteSize;
             BitmapSize = (int)(Stride*height);  
@@ -456,7 +462,7 @@ namespace ImageProcess
             BitCount =  *((ushort*)(_head+28));
             Compression = *(ImageCompressionType*)(_head+30);
 
-            ColumnByteSize = Width*BitCount>>8;  
+            ColumnByteSize =  Width*(BitCount>>2);  
             Stride = ((Width*BitCount + 31)>>5)<<2;
             SkipByteCount = Stride - ColumnByteSize;
             PaletteSize = (int)HeadStructSize - 54;

@@ -18,5 +18,6 @@ namespace ImageProcess
         void WriteImage(string filePath);
         void Decompose3(out IImageCore r,out IImageCore g,out IImageCore b);
         void Rgb1ToGray(out IImageCore grayImage);
+        void Threshold(byte minVal, out IImageCore binaryImg);
     }
 }
