@@ -24,6 +24,12 @@ namespace ImageProcess.Sample
 
             //gray8
             //TODO:
+
+            //Bin
+            BmpBinary bin = new BmpBinary();
+            bin.ReadImage("Sample/637_475_1.bmp");
+            Console.WriteLine(bin.TransToString());
+            bin.WriteImage("bin/Debug/net5.0/637_475_1_copy.bmp");
         }
 
     }

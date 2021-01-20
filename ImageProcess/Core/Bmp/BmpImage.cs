@@ -6,7 +6,7 @@ namespace ImageProcess.Core.Bmp
     ////https://blog.csdn.net/u013066730/article/details/82625158
     public unsafe abstract class BmpImage:ImageFileCommon
     {
-        byte[] palette;
+        public byte[] Palette{get;protected set;}
         public int XPelsPermeter{get;protected set;}
         public int YPelsPermeter{get;protected set;}
         public int RefrenceColorCount{get;protected set;}
@@ -52,20 +52,20 @@ namespace ImageProcess.Core.Bmp
             //调色盘
             if(BitCount < 9)
             {
-                palette = new byte[HeadStructSize - 54];
-                for(int i =0;i<palette.Length;i++)
+                Palette = new byte[HeadStructSize - 54];
+                for(int i =0;i<Palette.Length;i++)
                 {
-                    palette[i] = *byteHead++;
+                    Palette[i] = *byteHead++;
                 }
             }
             else
             {
-                palette = new byte[0];
+                Palette = new byte[0];
             }
             Marshal.FreeHGlobal(p);
 
             Stride = ((Width*BitCount + 31)>>5)<<2;
-            RankBytesCount = Width*(BitCount>>3);
+            RankBytesCount = (Width*BitCount)>>3;
             Count = RankBytesCount*Height;
             Scan0 = Marshal.AllocHGlobal(Count);
             IntPtr rowHead = Scan0;
@@ -101,11 +101,11 @@ namespace ImageProcess.Core.Bmp
             *intHead++ = ImportantColorCount;
             byte* byteHead = (byte*)intHead;
             //调色盘，默认是灰色或者没有调色盘，需要重载
-            if(palette.Length > 0&&BitCount <9)
+            if(Palette.Length > 0&&BitCount <9)
             {
-                for(int i =0 ;i<palette.Length;i++)
+                for(int i =0 ;i<Palette.Length;i++)
                 {
-                    *byteHead++ = palette[i];
+                    *byteHead++ = Palette[i];
                 }
             }
             Marshal.Copy(p,d,0,HeadStructSize);
