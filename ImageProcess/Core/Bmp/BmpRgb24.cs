@@ -1,3 +1,6 @@
+using System;
+using System.Runtime.InteropServices;
+
 namespace ImageProcess.Core.Bmp
 {
     public class BmpRgb24:BmpImage
@@ -7,7 +10,7 @@ namespace ImageProcess.Core.Bmp
         {
         }
 
-        public override void ReadImage(string filepath)
+        public override unsafe void ReadImage(string filepath)
         {
             byte[] data = System.IO.File.ReadAllBytes(filepath);
             IntPtr p = Marshal.AllocHGlobal(data.Length);
@@ -27,11 +30,11 @@ namespace ImageProcess.Core.Bmp
             Width = *intHead++;
             Height = *intHead++;
             BitCount = (ushort)( (*intHead++)>>16);
-            if(BitCount != 24)
-            {
-                return;
-            }
             Compression = *intHead++;
+            if((BitCount != 24)||(Compression != ImageTypeData.rgb))
+            {
+                throw new Exception("Target file is NO Rgb24");
+            }
             intHead++; //FileBytesSize - HeadStructSize
             XPelsPermeter = *intHead++;
             YPelsPermeter = *intHead++;
@@ -52,5 +55,44 @@ namespace ImageProcess.Core.Bmp
                 idx += Stride;
             }
         }
+
+        public override unsafe void WriteImage(string filepath)
+        {
+           byte[] d = new byte[FileBytesSize]; 
+            IntPtr p = Marshal.AllocHGlobal(HeadStructSize);
+            ushort* ushorthead = (ushort*)p.ToPointer();
+            *ushorthead++ = ImageTypeData.bmpFileHead;
+            int* intHead = (int*)ushorthead;
+            *intHead++ = FileBytesSize;
+            *intHead++ = 0;
+            *intHead++ = HeadStructSize;
+           
+            *intHead++ = 40;
+            *intHead++ = Width;
+            *intHead++ = Height;
+            *intHead++ = (BitCount<<16) + 1;
+            *intHead++ = Compression;
+            *intHead++ = FileBytesSize - HeadStructSize;
+            *intHead++ = XPelsPermeter;
+            *intHead++ = YPelsPermeter;
+            *intHead++ = RefrenceColorCount;
+            *intHead++ = ImportantColorCount;
+            Marshal.Copy(p,d,0,HeadStructSize);
+            Marshal.FreeHGlobal(p);
+            
+            //bitmap
+            IntPtr rowHead = Scan0;
+            int idx = HeadStructSize;
+            for (var i = 0; i < Height; i++)
+            {
+                Marshal.Copy(rowHead,d,idx,RankBytesCount);
+                rowHead = IntPtr.Add(rowHead,RankBytesCount);
+                idx += Stride;
+            }
+            
+            System.IO.File.WriteAllBytes(filepath,d);
+        }
+
+    
     }
 }

@@ -2,6 +2,11 @@ namespace ImageProcess.Core
 {
     public unsafe class ColorPalette
     {
+        public static readonly byte[] RgbPalette_1 = new byte[]
+        {
+            0,0,0,0,  
+            255,255,255,0
+        };
         public static readonly byte[] GrayPalette_256 = new byte[]
         {
             0,0,0,0,   

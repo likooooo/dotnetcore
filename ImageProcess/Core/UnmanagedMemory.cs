@@ -32,7 +32,7 @@ namespace ImageProcess.Core
             Width = width;
             Height = height;
             BitCount = bitCount;
-            RankBytesCount = Width*(BitCount>>8);
+            RankBytesCount = (Width*BitCount)>>3;
             Count = RankBytesCount*Height;
             Scan0 = Marshal.AllocHGlobal(Count);
         }
@@ -51,5 +51,15 @@ namespace ImageProcess.Core
             }
         }
         #endregion    
+    
+        /// <summary>
+        /// 非托管内存之间Copy
+        /// </summary>
+        /// <param name="dest"></param>
+        /// <param name="src"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        [DllImport("msvcrt.dll", EntryPoint = "memcpy",CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
+        public static extern IntPtr memcpy(IntPtr dest, IntPtr src, UIntPtr count);
     }
 }

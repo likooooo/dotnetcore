@@ -1,21 +1,19 @@
 using System;
 using System.Runtime.InteropServices;
-
 namespace ImageProcess.Core.Bmp
 {
-    public class BmpRgb8:BmpImage
+    public class BmpRgb1:BmpImage
     {
-        public BmpRgb8():base(){}
-        public BmpRgb8(int width,int height):base(width,height,8,ImageTypeData.rgb)
+        public BmpRgb1():base(){}
+        public BmpRgb1(int width,int height):base(width,height,1,ImageTypeData.rgb)
         {
         }
 
-        public unsafe BmpRgb8(int width,int height,IntPtr mat):base(width,height,8,ImageTypeData.rgb)
+        public unsafe BmpRgb1(int width,int height,IntPtr mat):base(width,height,1,ImageTypeData.rgb)
         {
-            Palette = ColorPalette.RgbPalette_256;
-            memcpy(Scan0,mat,new UIntPtr((uint)Count));
+            Palette = ColorPalette.RgbPalette_1;
+            memcpy(this.Scan0,mat,new UIntPtr((uint)Count));
         }
-
         public override unsafe void ReadImage(string filepath)
         {
             byte[] data = System.IO.File.ReadAllBytes(filepath);
@@ -37,16 +35,16 @@ namespace ImageProcess.Core.Bmp
             Height = *intHead++;
             BitCount = (ushort)( (*intHead++)>>16);
             Compression = *intHead++;
-            if((BitCount != 8)||(Compression != ImageTypeData.rgb))
+            if((BitCount != 1)||(Compression != ImageTypeData.rgb))
             {
-                throw new Exception("Target file is NO Rgb8");
+                throw new Exception("Target file is NO Rgb1");
             }
             intHead++; //FileBytesSize - HeadStructSize
             XPelsPermeter = *intHead++;
             YPelsPermeter = *intHead++;
             RefrenceColorCount = *intHead++;
             ImportantColorCount = *intHead++;
-            Palette = new byte[1024];
+            Palette = new byte[8];
             byte* byteHead = (byte*)intHead;
             for(int i =0;i<Palette.Length;i++)
             {
@@ -70,7 +68,7 @@ namespace ImageProcess.Core.Bmp
 
         public override unsafe void WriteImage(string filepath)
         {
-           byte[] d = new byte[FileBytesSize]; 
+            byte[] d = new byte[FileBytesSize]; 
             IntPtr p = Marshal.AllocHGlobal(HeadStructSize);
             ushort* ushorthead = (ushort*)p.ToPointer();
             *ushorthead++ = ImageTypeData.bmpFileHead;
@@ -111,6 +109,5 @@ namespace ImageProcess.Core.Bmp
             
             System.IO.File.WriteAllBytes(filepath,d);
         }
-
     }
 }

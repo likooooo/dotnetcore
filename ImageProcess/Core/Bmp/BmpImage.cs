@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace ImageProcess.Core.Bmp
 {
     ////https://blog.csdn.net/u013066730/article/details/82625158
-    public unsafe abstract class BmpImage:ImageFileCommon
+    public unsafe class BmpImage:ImageFileCommon
     {
         public byte[] Palette{get;protected set;}
         public int XPelsPermeter{get;protected set;}
@@ -99,10 +99,10 @@ namespace ImageProcess.Core.Bmp
             *intHead++ = YPelsPermeter;
             *intHead++ = RefrenceColorCount;
             *intHead++ = ImportantColorCount;
-            byte* byteHead = (byte*)intHead;
             //调色盘，默认是灰色或者没有调色盘，需要重载
-            if(Palette.Length > 0&&BitCount <9)
+            if(BitCount <9)
             {
+                byte* byteHead = (byte*)intHead;
                 for(int i =0 ;i<Palette.Length;i++)
                 {
                     *byteHead++ = Palette[i];
