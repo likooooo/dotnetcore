@@ -22,6 +22,7 @@ namespace ImageProcess
         public int HeadStructSize{get;protected set;}
         //整个文件字节数
         public int FileBytesSize{get;protected set;}
+        //位图起始索引，RankBytesCount * Height
         public IntPtr Scan0{get;protected set;}   
 
         public ImageCore(){}

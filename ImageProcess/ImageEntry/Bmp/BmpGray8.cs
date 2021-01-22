@@ -122,7 +122,7 @@ namespace ImageProcess.ImageEntry.Bmp
             {
                 memcpy(des,src,new UIntPtr((uint)mat.RankSize));
                 des = IntPtr.Add(des,mat.RankSize);
-                src = IntPtr.Add(src,RankBytesCount);
+                src = IntPtr.Add(src,Stride);
             }
             return mat;
         }

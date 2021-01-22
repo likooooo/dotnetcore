@@ -9,7 +9,7 @@ namespace ImageProcess
         static void Main(string[] args)
         {
             ExtentionOperateSetSample.BmpMatConvet_Sample();
-            //ExtentionOperateSetSample.ReadWrite_Sample();    
+            // ExtentionOperateSetSample.ReadWrite_Sample();    
             //ExtentionOperateSetSample.BmpImageReadWrite_Sample();
             //ExtentionOperateSetSample.CreateEmptyBmp_Sampe();
         }

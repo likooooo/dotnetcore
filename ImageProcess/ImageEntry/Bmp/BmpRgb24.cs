@@ -106,12 +106,13 @@ namespace ImageProcess.ImageEntry.Bmp
             mat.InitMemory(Width,Height,3);
             IntPtr src = Scan0;
             IntPtr des = mat.Scan0;
-            for(int i =0;i<Height;i++)
-            {
-                memcpy(des,src,new UIntPtr((uint)mat.RankSize));
-                des = IntPtr.Add(des,mat.RankSize);
-                src = IntPtr.Add(src,Stride);
-            }
+            memcpy(des,src,new UIntPtr((uint)Count));
+            // for(int i =0;i<Height;i++)
+            // {
+            //     memcpy(des,src,new UIntPtr((uint)mat.RankSize));
+            //     des = IntPtr.Add(des,mat.RankSize);
+            //     src = IntPtr.Add(src,mat.RankSize);
+            // }
             return mat;
         }
         
@@ -122,13 +123,14 @@ namespace ImageProcess.ImageEntry.Bmp
                 throw new Exception("Input Param NOT Fit Container");
             }
             IntPtr des = Scan0;
-            IntPtr src = mat.Scan0;
-            for(int i =0;i<Height;i++)
-            {
-                memcpy(des,src,new UIntPtr((uint)mat.RankSize));
-                des = IntPtr.Add(des,Stride);
-                src = IntPtr.Add(src,mat.RankSize);
-            }
+            IntPtr src = mat.Scan0;   
+            memcpy(des,src,new UIntPtr((uint)Count));
+            // for(int i =0;i<Height;i++)
+            // {
+            //     memcpy(des,src,new UIntPtr((uint)mat.RankSize));
+            //     des = IntPtr.Add(des,mat.RankSize);
+            //     src = IntPtr.Add(src,mat.RankSize);
+            // }
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace ImageProcess.ImageEntry.Bmp
@@ -141,19 +142,35 @@ namespace ImageProcess.ImageEntry.Bmp
             return mat;
         }
         
-        public override void TransMatToBmp(Mat mat)
+        public override unsafe void TransMatToBmp(Mat mat)
         {
             if(mat.ElementSize != 3||mat.Width != Width || mat.Height != Height)
             {
                 throw new Exception("Input Param NOT Fit Container");
             }
-            IntPtr des = Scan0;
-            IntPtr src = mat.Scan0;
+            int[] cp = new int[256];
+            int idx = 0;
+            fixed(int* cpPtr = &cp[0])
+            fixed(byte* rp = &Palette[0])
+            {
+                cpPtr[idx] = rp[4*idx] + rp[4*idx+1]<<4 +rp[4*idx+2]<<8;
+            }
+
+            idx = Width;
+            int skip = Stride - RankBytesCount;
+            byte* des = (byte*)Scan0.ToPointer();
+            int* src = (int*)mat.Scan0.ToPointer();
             for(int i =0;i<Height;i++)
             {
-                memcpy(des,src,new UIntPtr((uint)mat.RankSize));
-                des = IntPtr.Add(des,Stride);
-                src = IntPtr.Add(src,mat.RankSize);
+                if(i == idx)
+                {
+                    idx += Width;
+                    des += skip;
+                }
+                *des++ = (byte)Array.IndexOf<int>(cp,*src++);
+                // memcpy(des,src,new UIntPtr((uint)mat.RankSize));
+                // des = IntPtr.Add(des,Stride);
+                // src = IntPtr.Add(src,mat.RankSize);
             }
         }
     }
