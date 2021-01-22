@@ -1,22 +1,22 @@
 using System;
 using System.Collections.Generic;
-using ImageProcess.Core.Bmp;
+using ImageProcess.ImageEntry.Bmp;
 using System.Runtime.InteropServices;
 
-namespace ImageProcess.Core
+namespace ImageProcess.ImageEntry.RLC
 {
-    public unsafe struct RLC_RgbNode
-    {
-        public IntPtr ptr;
-        public int Length;
-    }
+    // public unsafe struct RLC_RgbNode
+    // {
+    //     public IntPtr ptr;
+    //     public int Length;
+    // }
 
-    public struct RLC_Data
-    {
-        public IntPtr ptr;
-        public int Length;
-        public int Type;//rle_8bpp ; rle_4bpp
-    }
+    // public struct RLC_Data
+    // {
+    //     public IntPtr ptr;
+    //     public int Length;
+    //     public int Type;//rle_8bpp ; rle_4bpp
+    // }
     //Run Length Code,游程编码
     // public static class RLC
     // {   

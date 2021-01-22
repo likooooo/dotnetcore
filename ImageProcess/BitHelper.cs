@@ -11,12 +11,13 @@ namespace ImageProcess
     {
         static readonly int[] intMask = new int[]{15,240,3840,61440};//low->high
 
-
         //获取int中指定字节
         public static byte GetByte(int source ,int byteIdx)=>(byte)((source&intMask[byteIdx])<<(8*byteIdx));
 
+        public static int GetBit(byte source,byte idx) => (source<< (7 -idx))>>7;
 
         //int 4字节赋值为相同字节值
-        public static int SetIntBytesSameVal(byte val) => val + (val<<8) + (val<<16) + (val<< 24);
+        public static int SetIntBytesSameVal(byte val) => val + (val<<8) + (val<<16) + (val<< 24);    
+
     }
 }

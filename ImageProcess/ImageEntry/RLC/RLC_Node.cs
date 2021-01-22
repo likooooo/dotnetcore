@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using ImageProcess.Core.Bmp;
+using ImageProcess.ImageEntry.Bmp;
 using System.Runtime.InteropServices;
 
-namespace ImageProcess.Core.RLC
+namespace ImageProcess.ImageEntry.RLC
 {
     //游程编码节点数据结构
     public struct RLC_Data

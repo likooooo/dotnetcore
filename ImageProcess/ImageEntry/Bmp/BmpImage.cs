@@ -1,20 +1,28 @@
 using System;
 using System.Runtime.InteropServices;
-namespace ImageProcess.Core.Bmp
+
+namespace ImageProcess.ImageEntry.Bmp
 {
-    public class BmpRgb1:BmpImage
+    ////https://blog.csdn.net/u013066730/article/details/82625158
+    public unsafe class BmpImage:ImageCore
     {
-        public BmpRgb1():base(){}
-        public BmpRgb1(int width,int height):base(width,height,1,ImageTypeData.rgb)
+        public byte[] Palette{get;protected set;}
+        public int XPelsPermeter{get;protected set;}
+        public int YPelsPermeter{get;protected set;}
+        public int RefrenceColorCount{get;protected set;}
+        public int ImportantColorCount{get;protected set;}
+
+        public BmpImage(){}
+
+        public  BmpImage(int widht,int height,ushort bitcount,int compression = ImageTypeData.rgb):base(widht,height,bitcount,compression)
         {
+            XPelsPermeter = 11911;
+            YPelsPermeter = 11911;
+            RefrenceColorCount = 2<<bitcount;
+            ImportantColorCount = 0;
         }
 
-        public unsafe BmpRgb1(int width,int height,IntPtr mat):base(width,height,1,ImageTypeData.rgb)
-        {
-            Palette = ColorPalette.RgbPalette_1;
-            memcpy(this.Scan0,mat,new UIntPtr((uint)Count));
-        }
-        public override unsafe void ReadImage(string filepath)
+        public override void ReadImage(string filepath)
         {
             byte[] data = System.IO.File.ReadAllBytes(filepath);
             IntPtr p = Marshal.AllocHGlobal(data.Length);
@@ -35,20 +43,24 @@ namespace ImageProcess.Core.Bmp
             Height = *intHead++;
             BitCount = (ushort)( (*intHead++)>>16);
             Compression = *intHead++;
-            if((BitCount != 1)||(Compression != ImageTypeData.rgb))
-            {
-                throw new Exception("Target file is NO Rgb1");
-            }
             intHead++; //FileBytesSize - HeadStructSize
             XPelsPermeter = *intHead++;
             YPelsPermeter = *intHead++;
             RefrenceColorCount = *intHead++;
             ImportantColorCount = *intHead++;
-            Palette = new byte[8];
             byte* byteHead = (byte*)intHead;
-            for(int i =0;i<Palette.Length;i++)
+            //调色盘
+            if(BitCount < 9)
             {
-                Palette[i] = *byteHead++;
+                Palette = new byte[HeadStructSize - 54];
+                for(int i =0;i<Palette.Length;i++)
+                {
+                    Palette[i] = *byteHead++;
+                }
+            }
+            else
+            {
+                Palette = new byte[0];
             }
             Marshal.FreeHGlobal(p);
 
@@ -66,12 +78,12 @@ namespace ImageProcess.Core.Bmp
             }
         }
 
-        public override unsafe void WriteImage(string filepath)
-        {
+        public override void WriteImage(string filepath)
+        {           
             byte[] d = new byte[FileBytesSize]; 
             IntPtr p = Marshal.AllocHGlobal(HeadStructSize);
             ushort* ushorthead = (ushort*)p.ToPointer();
-            *ushorthead++ = ImageTypeData.bmpFileHead;
+            *ushorthead++ = 19778;
             int* intHead = (int*)ushorthead;
             *intHead++ = FileBytesSize;
             *intHead++ = 0;
@@ -87,13 +99,15 @@ namespace ImageProcess.Core.Bmp
             *intHead++ = YPelsPermeter;
             *intHead++ = RefrenceColorCount;
             *intHead++ = ImportantColorCount;
-
-            byte* byteHead = (byte*)intHead;
-            for(int i =0 ;i<Palette.Length;i++)
+            //调色盘，默认是灰色或者没有调色盘，需要重载
+            if(BitCount <9)
             {
-                *byteHead++ = Palette[i];
+                byte* byteHead = (byte*)intHead;
+                for(int i =0 ;i<Palette.Length;i++)
+                {
+                    *byteHead++ = Palette[i];
+                }
             }
-
             Marshal.Copy(p,d,0,HeadStructSize);
             Marshal.FreeHGlobal(p);
             
@@ -109,5 +123,7 @@ namespace ImageProcess.Core.Bmp
             
             System.IO.File.WriteAllBytes(filepath,d);
         }
+
+        public virtual void SetPalette(byte[] palette){Palette = palette;}
     }
 }

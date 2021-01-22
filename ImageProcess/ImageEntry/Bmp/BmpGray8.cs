@@ -1,28 +1,22 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace ImageProcess.Core.Bmp
+namespace ImageProcess.ImageEntry.Bmp
 {
-    ////https://blog.csdn.net/u013066730/article/details/82625158
-    public unsafe class BmpImage:ImageFileCommon
+    public class BmpGray8:BmpImage
     {
-        public byte[] Palette{get;protected set;}
-        public int XPelsPermeter{get;protected set;}
-        public int YPelsPermeter{get;protected set;}
-        public int RefrenceColorCount{get;protected set;}
-        public int ImportantColorCount{get;protected set;}
-
-        public BmpImage(){}
-
-        public  BmpImage(int widht,int height,ushort bitcount,int compression = ImageTypeData.rgb):base(widht,height,bitcount,compression)
+        public BmpGray8():base(){}
+        public BmpGray8(int width,int height):base(width,height,8,ImageTypeData.rgb)
         {
-            XPelsPermeter = 11911;
-            YPelsPermeter = 11911;
-            RefrenceColorCount = 2<<bitcount;
-            ImportantColorCount = 0;
+            Palette = ColorPalette.GrayPalette_256;
         }
 
-        public override void ReadImage(string filepath)
+        public unsafe BmpGray8(int width,int height,IntPtr mat):this(width,height)
+        {
+            memcpy(Scan0,mat,new UIntPtr((uint)Count));
+        }
+
+        public override unsafe void ReadImage(string filepath)
         {
             byte[] data = System.IO.File.ReadAllBytes(filepath);
             IntPtr p = Marshal.AllocHGlobal(data.Length);
@@ -43,24 +37,20 @@ namespace ImageProcess.Core.Bmp
             Height = *intHead++;
             BitCount = (ushort)( (*intHead++)>>16);
             Compression = *intHead++;
+            if((BitCount != 8)||(Compression != ImageTypeData.rgb))
+            {
+                throw new Exception("Target file is NO Rgb8");
+            }
             intHead++; //FileBytesSize - HeadStructSize
             XPelsPermeter = *intHead++;
             YPelsPermeter = *intHead++;
             RefrenceColorCount = *intHead++;
             ImportantColorCount = *intHead++;
+            Palette = new byte[1024];
             byte* byteHead = (byte*)intHead;
-            //调色盘
-            if(BitCount < 9)
+            for(int i =0;i<Palette.Length;i++)
             {
-                Palette = new byte[HeadStructSize - 54];
-                for(int i =0;i<Palette.Length;i++)
-                {
-                    Palette[i] = *byteHead++;
-                }
-            }
-            else
-            {
-                Palette = new byte[0];
+                Palette[i] = *byteHead++;
             }
             Marshal.FreeHGlobal(p);
 
@@ -77,13 +67,13 @@ namespace ImageProcess.Core.Bmp
                 idx += Stride;
             }
         }
-
-        public override void WriteImage(string filepath)
-        {           
+        
+        public override unsafe void WriteImage(string filepath)
+        {
             byte[] d = new byte[FileBytesSize]; 
             IntPtr p = Marshal.AllocHGlobal(HeadStructSize);
             ushort* ushorthead = (ushort*)p.ToPointer();
-            *ushorthead++ = 19778;
+            *ushorthead++ = ImageTypeData.bmpFileHead;
             int* intHead = (int*)ushorthead;
             *intHead++ = FileBytesSize;
             *intHead++ = 0;
@@ -99,15 +89,13 @@ namespace ImageProcess.Core.Bmp
             *intHead++ = YPelsPermeter;
             *intHead++ = RefrenceColorCount;
             *intHead++ = ImportantColorCount;
-            //调色盘，默认是灰色或者没有调色盘，需要重载
-            if(BitCount <9)
+
+            byte* byteHead = (byte*)intHead;
+            for(int i =0 ;i<Palette.Length;i++)
             {
-                byte* byteHead = (byte*)intHead;
-                for(int i =0 ;i<Palette.Length;i++)
-                {
-                    *byteHead++ = Palette[i];
-                }
+                *byteHead++ = Palette[i];
             }
+
             Marshal.Copy(p,d,0,HeadStructSize);
             Marshal.FreeHGlobal(p);
             
@@ -124,5 +112,35 @@ namespace ImageProcess.Core.Bmp
             System.IO.File.WriteAllBytes(filepath,d);
         }
 
+        public override unsafe Mat TransBmpToMat()
+        {
+            Mat mat = new Mat();
+            mat.InitMemory(Width,Height,1);
+            IntPtr des = mat.Scan0;
+            IntPtr src = Scan0;
+            for(int i =0;i<Height;i++)
+            {
+                memcpy(des,src,new UIntPtr((uint)mat.RankSize));
+                des = IntPtr.Add(des,mat.RankSize);
+                src = IntPtr.Add(src,RankBytesCount);
+            }
+            return mat;
+        }
+        
+        public override void TransMatToBmp(Mat mat)
+        {
+            if(mat.ElementSize != 1||mat.Width != Width || mat.Height != Height)
+            {
+                throw new Exception("Input Param NOT Fit Container");
+            }
+            IntPtr des = Scan0;
+            IntPtr src = mat.Scan0;
+            for(int i =0;i<Height;i++)
+            {
+                memcpy(des,src,new UIntPtr((uint)mat.RankSize));
+                des = IntPtr.Add(des,Stride);
+                src = IntPtr.Add(src,mat.RankSize);
+            }
+        }
     }
 }

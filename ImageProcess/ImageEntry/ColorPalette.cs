@@ -1,4 +1,4 @@
-namespace ImageProcess.Core
+namespace ImageProcess.ImageEntry
 {
     public unsafe class ColorPalette
     {
