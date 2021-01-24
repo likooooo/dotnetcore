@@ -13,6 +13,7 @@ namespace ImageProcess.ImageEntry.Bmp
 
         public unsafe BmpGray8(int width,int height,IntPtr mat):this(width,height)
         {
+            InitMemory();
             memcpy(Scan0,mat,new UIntPtr((uint)Count));
         }
 
@@ -110,37 +111,6 @@ namespace ImageProcess.ImageEntry.Bmp
             }
             
             System.IO.File.WriteAllBytes(filepath,d);
-        }
-
-        public override unsafe Mat TransBmpToMat()
-        {
-            Mat mat = new Mat();
-            mat.InitMemory(Width,Height,1);
-            IntPtr des = mat.Scan0;
-            IntPtr src = Scan0;
-            for(int i =0;i<Height;i++)
-            {
-                memcpy(des,src,new UIntPtr((uint)mat.RankSize));
-                des = IntPtr.Add(des,mat.RankSize);
-                src = IntPtr.Add(src,Stride);
-            }
-            return mat;
-        }
-        
-        public override void TransMatToBmp(Mat mat)
-        {
-            if(mat.ElementSize != 1||mat.Width != Width || mat.Height != Height)
-            {
-                throw new Exception("Input Param NOT Fit Container");
-            }
-            IntPtr des = Scan0;
-            IntPtr src = mat.Scan0;
-            for(int i =0;i<Height;i++)
-            {
-                memcpy(des,src,new UIntPtr((uint)mat.RankSize));
-                des = IntPtr.Add(des,Stride);
-                src = IntPtr.Add(src,mat.RankSize);
-            }
         }
     }
 }

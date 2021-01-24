@@ -6,70 +6,72 @@ using System.Runtime.InteropServices;
 namespace ImageProcess.ImageEntry.RLC
 {
     //游程编码节点数据结构
-    public struct RLC_Data
+    public struct RLC_Data<T> where T:unmanaged
     {
-        public IntPtr Start;
-        public int Data;
+        public T Data;
+        public int Index;
         public int Length;
 
-        public override string ToString() => $"({Data},{Length})";
-        public byte[] CopyTo()
-        {
-            byte[] res = new byte[Length * 4];
-            Marshal.Copy(Start,res,0,res.Length);
-            return res;
-        }
+        public override string ToString() => $"({Index},{Data},{Length})";
     }
 
     //游程编码节点
-    public class RLC_Node
+    public class RLC_Node<T> where T:unmanaged
     {
-        public RLC_Node prevent;
-        public RLC_Data data;
+        public RLC_Node<T> prevent;
+        public RLC_Data<T> data;
 
         public RLC_Node(){}
     }
 
     //游程编码堆栈
-    public class RLC_NodeList
+    public class RLC_NodeList<T> where T:unmanaged
     {
-        public RLC_Node lastNode;
+        public RLC_Node<T> lastNode;
         public int Count{get;protected set;}
-        protected RLC_NodeList():base()
+        public RLC_NodeList():base()
         {
             lastNode = null;
             Count = 0;
         }
 
-        public RLC_Node PushBack(int data,int length) => PushBack
-        (
-            new RLC_Data
-            {
-                Data  = data,
-                Length = length
-            }
-        );
-        
-        public RLC_Node PushBack(RLC_Data d)
+        public RLC_Node<T> PushBack(RLC_Data<T> d)
         {
-            RLC_Node node = new RLC_Node();
+            RLC_Node<T> node = new RLC_Node<T>();
             node.prevent = lastNode;
             node.data = d;
             lastNode = node;
             Count++;
             return node;
         }
+        public void PushBack(T d,int idx)
+        {
+            if((idx == lastNode.data.Index + lastNode.data.Length)&&lastNode.data.Data.Equals(d)&&lastNode != null)
+            {
+                lastNode.data.Length++;
+            }
+            else
+            {
+                RLC_Node<T> node = new RLC_Node<T>();
+                node.prevent = lastNode;
+                node.data.Data = d;
+                node.data.Length = 1;
+                node.data.Index = idx;
+                lastNode = node;
+                Count++;  
+            }
+        }
         
-        public void PushBack(ref RLC_Node node)
+        public void PushBack(ref RLC_Node<T> node)
         {
             node.prevent = lastNode;
             lastNode = node;
             Count++;
         }
 
-        public RLC_Node PopBack()
+        public RLC_Node<T> PopBack()
         {
-            RLC_Node res;
+            RLC_Node<T> res;
             if(Count > -1)
             {
                 res = lastNode;
@@ -81,9 +83,9 @@ namespace ImageProcess.ImageEntry.RLC
             return res;
         }
 
-        public RLC_Node ElementAt(int idx)
+        public RLC_Node<T> ElementAt(int idx)
         {
-            RLC_Node res = lastNode;
+            RLC_Node<T> res = lastNode;
             int LoopIdx = Count -1;
             while(idx < LoopIdx)
             {
@@ -92,17 +94,11 @@ namespace ImageProcess.ImageEntry.RLC
             }
             return res;
         }
-
-        public static RLC_NodeList CreateNodeList()
-        {
-            RLC_NodeList res = new RLC_NodeList();
-            return res;
-        }
         
         public override string ToString()
         {
             String res = "";
-            RLC_Node node = lastNode;
+            RLC_Node<T> node = lastNode;
             while(res != null)
             {
                 res = node.ToString() + "\r"+ res;

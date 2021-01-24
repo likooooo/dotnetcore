@@ -8,12 +8,13 @@ namespace ImageProcess.ImageEntry.Bmp
         public BmpRgb24():base(){}
         public BmpRgb24(int width,int height):base(width,height,24,ImageTypeData.rgb)
         {
+            Palette = new byte[0];
         }
 
-        public unsafe BmpRgb24(int width,int height,IntPtr mat):base(width,height,24,ImageTypeData.rgb)
+        public unsafe BmpRgb24(int width,int height,IntPtr src):this(width,height)
         {
-            Palette = new byte[0];
-            memcpy(Scan0,mat,new UIntPtr((uint)Count));
+            InitMemory();
+            memcpy(Scan0,src,new UIntPtr((uint)Count));
         }
 
 
@@ -100,37 +101,12 @@ namespace ImageProcess.ImageEntry.Bmp
             System.IO.File.WriteAllBytes(filepath,d);
         }
 
-        public override Mat TransBmpToMat()
-        {
-            Mat mat = new Mat();
-            mat.InitMemory(Width,Height,3);
-            IntPtr src = Scan0;
-            IntPtr des = mat.Scan0;
-            memcpy(des,src,new UIntPtr((uint)Count));
-            // for(int i =0;i<Height;i++)
-            // {
-            //     memcpy(des,src,new UIntPtr((uint)mat.RankSize));
-            //     des = IntPtr.Add(des,mat.RankSize);
-            //     src = IntPtr.Add(src,mat.RankSize);
-            // }
-            return mat;
-        }
+        // public override Mat RefrenceMat()
+        // {
+        //     Mat mat = new Mat();
+        //     mat.InitMemory(Width,Height,3);
+        //     return mat;
+        // }
         
-        public override void TransMatToBmp(Mat mat)
-        {
-            if(mat.ElementSize != 3||mat.Width != Width || mat.Height != Height)
-            {
-                throw new Exception("Input Param NOT Fit Container");
-            }
-            IntPtr des = Scan0;
-            IntPtr src = mat.Scan0;   
-            memcpy(des,src,new UIntPtr((uint)Count));
-            // for(int i =0;i<Height;i++)
-            // {
-            //     memcpy(des,src,new UIntPtr((uint)mat.RankSize));
-            //     des = IntPtr.Add(des,mat.RankSize);
-            //     src = IntPtr.Add(src,mat.RankSize);
-            // }
-        }
     }
 }

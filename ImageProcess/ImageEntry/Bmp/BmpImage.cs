@@ -11,15 +11,16 @@ namespace ImageProcess.ImageEntry.Bmp
         public int YPelsPermeter{get;protected set;}
         public int RefrenceColorCount{get;protected set;}
         public int ImportantColorCount{get;protected set;}
+        //头文件字节数
+        public int HeadStructSize{get;protected set;}
+        //整个文件字节数
+        public int FileBytesSize{get;protected set;}
 
         public BmpImage(){}
 
-        public  BmpImage(int widht,int height,ushort bitcount,int compression = ImageTypeData.rgb):base(widht,height,bitcount,compression)
+        public  BmpImage(int width,int height,ushort bitcount,int compression = ImageTypeData.rgb):base()
         {
-            XPelsPermeter = 11911;
-            YPelsPermeter = 11911;
-            RefrenceColorCount = 2<<bitcount;
-            ImportantColorCount = 0;
+            InitImageHead(width,height,bitcount,compression);
         }
 
         public override void ReadImage(string filepath)
@@ -125,5 +126,16 @@ namespace ImageProcess.ImageEntry.Bmp
         }
 
         public virtual void SetPalette(byte[] palette){Palette = palette;}
+
+        public override void InitImageHead(int width,int height,ushort bitcount,int compression)
+        {
+            base.InitImageHead(width,height,bitcount,compression);
+            XPelsPermeter = 0;
+            YPelsPermeter = 0;
+            RefrenceColorCount = bitcount > 8? 0 : 1<<bitcount;
+            ImportantColorCount = 0;
+            HeadStructSize = 54 + RefrenceColorCount * 4;
+            FileBytesSize = HeadStructSize + Stride * Height;
+        }
     }
 }

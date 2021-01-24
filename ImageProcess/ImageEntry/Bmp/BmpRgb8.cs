@@ -14,6 +14,7 @@ namespace ImageProcess.ImageEntry.Bmp
 
         public unsafe BmpRgb8(int width,int height,IntPtr mat):this(width,height)
         {
+            InitMemory();
             memcpy(Scan0,mat,new UIntPtr((uint)Count));
         }
 
@@ -113,65 +114,65 @@ namespace ImageProcess.ImageEntry.Bmp
             System.IO.File.WriteAllBytes(filepath,d);
         }
 
-        public override unsafe Mat TransBmpToMat()
-        {
-            Mat mat = new Mat();
-            mat.InitMemory(Width,Height,3);
-            byte* src = (byte*)Scan0.ToPointer();
-            byte* des = (byte*)mat.Scan0.ToPointer();
-            int skip = Stride - RankBytesCount;
-            int lineIdx = Width;
-            //i = 0
-            int cpIdx = (*src++) << 2;//4 *(*src++)        
-            *des++ = Palette[cpIdx  ];
-            *des++ = Palette[cpIdx+1];
-            *des++ = Palette[cpIdx+2];
-            // i = [1 ~ Count)
-            for(int i = 1;i<Count;i++)
-            {
-                if(i == lineIdx)
-                {
-                    lineIdx += Width;
-                    src += skip;
-                }
-                cpIdx = (*src++) << 2;
-                *des++ = Palette[cpIdx  ];
-                *des++ = Palette[cpIdx+1];
-                *des++ = Palette[cpIdx+2];
-            }
-            return mat;
-        }
+        // public unsafe Mat TransBmpToMat()
+        // {
+        //     Mat mat = new Mat();
+        //     mat.InitMemory(Width,Height,3);
+        //     byte* src = (byte*)Scan0.ToPointer();
+        //     byte* des = (byte*)mat.Scan0.ToPointer();
+        //     int skip = Stride - RankBytesCount;
+        //     int lineIdx = Width;
+        //     //i = 0
+        //     int cpIdx = (*src++) << 2;//4 *(*src++)        
+        //     *des++ = Palette[cpIdx  ];
+        //     *des++ = Palette[cpIdx+1];
+        //     *des++ = Palette[cpIdx+2];
+        //     // i = [1 ~ Count)
+        //     for(int i = 1;i<Count;i++)
+        //     {
+        //         if(i == lineIdx)
+        //         {
+        //             lineIdx += Width;
+        //             src += skip;
+        //         }
+        //         cpIdx = (*src++) << 2;
+        //         *des++ = Palette[cpIdx  ];
+        //         *des++ = Palette[cpIdx+1];
+        //         *des++ = Palette[cpIdx+2];
+        //     }
+        //     return mat;
+        // }
         
-        public override unsafe void TransMatToBmp(Mat mat)
-        {
-            if(mat.ElementSize != 3||mat.Width != Width || mat.Height != Height)
-            {
-                throw new Exception("Input Param NOT Fit Container");
-            }
-            int[] cp = new int[256];
-            int idx = 0;
-            fixed(int* cpPtr = &cp[0])
-            fixed(byte* rp = &Palette[0])
-            {
-                cpPtr[idx] = rp[4*idx] + rp[4*idx+1]<<4 +rp[4*idx+2]<<8;
-            }
+        // public unsafe void TransMatToBmp(Mat mat)
+        // {
+        //     if(mat.ElementSize != 1||mat.Width != Width || mat.Height != Height)
+        //     {
+        //         throw new Exception("Input Param NOT Fit Container");
+        //     }
+        //     int[] cp = new int[256];
+        //     int idx = 0;
+        //     fixed(int* cpPtr = &cp[0])
+        //     fixed(byte* rp = &Palette[0])
+        //     {
+        //         cpPtr[idx] = rp[4*idx] + rp[4*idx+1]<<4 +rp[4*idx+2]<<8;
+        //     }
 
-            idx = Width;
-            int skip = Stride - RankBytesCount;
-            byte* des = (byte*)Scan0.ToPointer();
-            int* src = (int*)mat.Scan0.ToPointer();
-            for(int i =0;i<Height;i++)
-            {
-                if(i == idx)
-                {
-                    idx += Width;
-                    des += skip;
-                }
-                *des++ = (byte)Array.IndexOf<int>(cp,*src++);
-                // memcpy(des,src,new UIntPtr((uint)mat.RankSize));
-                // des = IntPtr.Add(des,Stride);
-                // src = IntPtr.Add(src,mat.RankSize);
-            }
-        }
+        //     idx = Width;
+        //     int skip = Stride - RankBytesCount;
+        //     byte* des = (byte*)Scan0.ToPointer();
+        //     int* src = (int*)mat.Scan0.ToPointer();
+        //     for(int i =0;i<Height;i++)
+        //     {
+        //         if(i == idx)
+        //         {
+        //             idx += Width;
+        //             des += skip;
+        //         }
+        //         *des++ = (byte)Array.IndexOf<int>(cp,*src++);
+        //         // memcpy(des,src,new UIntPtr((uint)mat.RankSize));
+        //         // des = IntPtr.Add(des,Stride);
+        //         // src = IntPtr.Add(src,mat.RankSize);
+        //     }
+        // }
     }
 }

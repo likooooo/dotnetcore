@@ -8,10 +8,13 @@ namespace ImageProcess.ImageEntry.Bmp
         public BmpRgb1(int width,int height):base(width,height,1,ImageTypeData.rgb)
         {
             Palette = ColorPalette.RgbPalette_1;
+            RankBytesCount = (Width*BitCount + 7)>>3;
+            Count = RankBytesCount*Height;
         }
 
         public unsafe BmpRgb1(int width,int height,IntPtr mat):this(width,height)
         {
+            InitMemory();
             memcpy(this.Scan0,mat,new UIntPtr((uint)Count));
         }
         
@@ -109,105 +112,6 @@ namespace ImageProcess.ImageEntry.Bmp
             }
             
             System.IO.File.WriteAllBytes(filepath,d);
-        }
-
-        //https://www.docin.com/p-1331706333.html
-        public override unsafe Mat TransBmpToMat()
-        {
-            Mat mat = new Mat();
-            mat.InitMemory(Width,Height,1);
-            byte* src =(byte*) Scan0.ToPointer();
-            Int64* des = (Int64*)mat.Scan0.ToPointer();
-
-            byte skip = (byte)(Width%8);
-            int srcSkip = Stride - RankBytesCount; 
-            //到达尾行触发
-            int lineIdx = Width - 1;
-            for(int i = 0;i<mat.Count;i += 8)
-            {
-                if(i == lineIdx)//负责最后一个字节的二值数据玻璃，再换行
-                {
-                    byte* byteHead = (byte*)src;
-                    byte rowEndByte = *src++;
-                    for(byte j = 0;j<skip;j++)
-                    {
-                        *byteHead++ = (byte)Bit.GetBit(rowEndByte,j);
-                    }
-                    i += skip;
-                    des = (Int64*)byteHead;
-                    lineIdx += Width;
-                    src += srcSkip;
-                    continue;
-                }
-                //一次存8字节
-                *des++ = ByteToInt64(*src++);
-            }
-            return mat;
-        }
-       
-        #region 将二值图信息拆分为bmp，或者将bmp合并为二值图信息的 位拆分合并私有方法
-        //10100101 =>0001 0000 0001 0000 0000 0001 0000 0001
-        static Int64 ByteToInt64(byte val)
-        {
-            Int64 res;
-            res =  val&1;
-            res += (val&2)<<3;
-            res += (val&4)<<6;
-            res += (val&8)<<9;
-            res += (val&16)<<12;
-            res += (val&32)<<15;
-            res += (val&64)<<18;
-            res += (val&128)<<21;
-            return res;
-        }
-        static byte Int64ToByte(Int64 val)
-        {
-            byte res;
-            res =  (byte)( val&1             );
-            res += (byte)((val&16)       >> 3);
-            res += (byte)((val&256)      >> 6);
-            res += (byte)((val&4096)     >> 9);
-            res += (byte)((val&65536)    >>12);
-            res += (byte)((val&1048576)  >>15);
-            res += (byte)((val&16777216) >>18);
-            res += (byte)((val&268435456)>>21);
-            return res;
-        }
-        #endregion
-       
-        public override unsafe void TransMatToBmp(Mat mat)
-        {
-            if(mat.ElementSize != 1||mat.Width != Width || mat.Height != Height)
-            {
-                Console.WriteLine("Input Param NOT Fit Container");
-                throw new Exception("Input Param NOT Fit Container");
-            }
-            byte*  des = (byte*) Scan0.ToPointer();
-            Int64* src = (Int64*)mat.Scan0.ToPointer();
-
-            byte skip = (byte)(Width%8);
-            int srcSkip = Stride - RankBytesCount; 
-            //到达尾行触发
-            int lineIdx = Width - 1;
-            for(int i =0;i<mat.Count;i += 8)
-            {
-                if(i == lineIdx)//负责最后一个字节的二值数据玻璃，再换行
-                {
-                    byte* byteHead = (byte*)src;
-                    byte rowEndByte = 0;
-                    for(byte j = 0;j<skip;j++)
-                    {
-                        rowEndByte += (byte)(*byteHead<<j);
-                        byteHead++;
-                    }
-                    *des ++ = rowEndByte;
-                    src = (Int64*)byteHead;
-                    lineIdx += Width;
-                    src += srcSkip;
-                    continue;
-                }
-                *des++ = Int64ToByte(*src++); 
-            }
         }
     }
 }
