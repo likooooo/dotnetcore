@@ -16,7 +16,7 @@ namespace ImageProcess.Sample
             {
                 if(src[i]!=des[i])
                 {
-                    Console.WriteLine(i);
+                    Console.WriteLine($"{i}-{src[i]}-{des[i]}");
                 }
             }
         }

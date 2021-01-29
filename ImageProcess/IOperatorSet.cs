@@ -2,6 +2,7 @@
 using System;
 using ImageProcess.ImageEntry.Bmp;
 using ImageProcess.ImageEntry.RLC;
+
 namespace ImageProcess
 {
     public static unsafe class IOperatorSet<T> where T:unmanaged
@@ -36,7 +37,6 @@ namespace ImageProcess
             while (--loopCount > -1)
             {
                 *p = val;
-                Console.WriteLine($"{(int)p}-{*p}");
                 p += img.ElementSize;
             }
         }
@@ -112,10 +112,36 @@ namespace ImageProcess
             {
                 if (*gp>=min&&*gp<=max)
                 {
-                    list.PushBack(0xff,idx);
+                    if(list.IsEmpty)
+                    {
+                        RLC_Node<byte> head = new RLC_Node<byte>();
+                        head.data = new RLC_Data<byte>();
+                        head.data.Data = 0xff;
+                        head.data.Length = 1;
+                        head.data.Index = idx;
+                        list.Append(head);
+                    }
+                    else
+                    {  
+                        list.PushBack(0xff,idx);
+                    }
                 }
                 gp++;
             }
+        }
+
+        public static void Erode(RLC_NodeList<byte> region,RLC_Element_Rect element)
+        {
+            int idx = region.Count;
+            while(--idx > -1)
+            {
+                
+            }
+        }
+
+        public static void Dilate()
+        {
+            
         }
     }
 }

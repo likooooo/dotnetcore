@@ -43,7 +43,6 @@ namespace ImageProcess
        
         public virtual void InitMemory(){Scan0 = Marshal.AllocHGlobal(Count);}
 
-
         #region IDisposable接口实现     
         public void Dispose()
         {

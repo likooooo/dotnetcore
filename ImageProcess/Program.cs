@@ -8,7 +8,7 @@ namespace ImageProcess
     {
         static void Main(string[] args)
         {
-            ExtentionOperateSetSample.Decompose3_Sample();
+            ExtentionOperateSetSample.PreProcess_Sample();
         }
         //10100101 =>0001 0000 0001 0000 0000 0001 0000 0001
         static Int64 ByteToInt64(byte val)
