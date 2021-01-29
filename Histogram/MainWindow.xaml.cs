@@ -26,16 +26,24 @@ namespace Histogram
             InitializeComponent();
             ImageBrush ib = new ImageBrush();
             ib.Stretch = Stretch.None;
-            string backgroundFilePath = "../ImageProcess/Sample/570_554_24.bmp";
+            string backgroundFilePath = @"C:\Users\like\Desktop\Project\dotnet-core\dotnetcore\ImageProcess\Sample\570_544_24.bmp";
             if(File.Exists(backgroundFilePath))
             {              
                 ib.ImageSource = new System.Windows.Media.Imaging.BitmapImage(new Uri(backgroundFilePath, UriKind.RelativeOrAbsolute));
+                this.Background = ib;
             }
             else
             {
-                //throw new Exception("asd");
+                Title = "Can Not Find Image";
             }
-            this.Background = ib;
+            Button btn = new Button();
+            btn.Width = this.Width;
+            btn.Height = this.Height/2;
+            btn.Height= 50;
+            canvas.Children.Add(btn);
+            canvas.RegisterName("newButton", btn);//注册名字，以便以后使用
+            //this.Children.Add(btn);
+            this.Children.Add(btn);
             this.KeyDown += EscToExistForm;
         }
         public MainWindow(int widht,int height,string title):this()
