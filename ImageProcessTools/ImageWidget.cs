@@ -17,36 +17,21 @@ using System.Windows.Shapes;
 namespace Histogram
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Interaction logic for ImageWidget.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class ImageWidget : Window
     {
-        public MainWindow()
+        //https://blog.csdn.net/chaipp0607/article/details/54427128
+        public ImageWidget()
         {
             InitializeComponent();
-            ImageBrush ib = new ImageBrush();
-            ib.Stretch = Stretch.None;
             string backgroundFilePath = @"C:\Users\like\Desktop\Project\dotnet-core\dotnetcore\ImageProcess\Sample\570_544_24.bmp";
-            if(File.Exists(backgroundFilePath))
-            {              
-                ib.ImageSource = new System.Windows.Media.Imaging.BitmapImage(new Uri(backgroundFilePath, UriKind.RelativeOrAbsolute));
-                this.Background = ib;
-            }
-            else
-            {
-                Title = "Can Not Find Image";
-            }
-            Button btn = new Button();
-            btn.Width = this.Width;
-            btn.Height = this.Height/2;
-            btn.Height= 50;
-            canvas.Children.Add(btn);
-            canvas.RegisterName("newButton", btn);//注册名字，以便以后使用
-            //this.Children.Add(btn);
-            this.Children.Add(btn);
+            imgContainer.Stretch = Stretch.Fill;
+            imgContainer.Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(backgroundFilePath, UriKind.RelativeOrAbsolute));
+            Title = Title + this.GetHashCode().ToString();
             this.KeyDown += EscToExistForm;
         }
-        public MainWindow(int widht,int height,string title):this()
+        public ImageWidget(int widht,int height,string title):this()
         {
             this.Width = widht;
             this.Height = height;
