@@ -121,6 +121,7 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
             <RowDefinition/>
+            <RowDefinition/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -132,7 +133,7 @@
                 <BlurBitmapEffect Radius="10" KernelType="Box" />
             </Button.BitmapEffect>
         </Button>
-        <Button Grid.Row = "2" Grid.Column = "1" Content = "ButtonText">
+        <Button Grid.Row = "2" Grid.Column = "1"  Content = "ButtonText">
         </Button>
         <TextBlock Grid.Column = "1">
             TextBlock
@@ -157,7 +158,11 @@
             HorizontalContentAlignment="Stretch" 
             IsSynchronizedWithCurrentItem="True"
         />
-        <Menu Grid.Row = "1" Grid.RowSpan = "3">
+        <TextBox Name="textBox1" TextWrapping="Wrap" Margin="2" Grid.Row = "3" Grid.Column = "1" >
+        The quick brown fox jumps over the lazy dog.
+        </TextBox>
+        <Separator/>
+        <Menu Grid.Row = "4">
             <MenuItem Header="_Edit">
                 <MenuItem Command="ApplicationCommands.Copy"/>
                 <MenuItem Command="ApplicationCommands.Cut"/>
@@ -171,11 +176,17 @@
                 <MenuItem Header="_Decrease Font Size" />
             </MenuItem>
         </Menu>
-        <TextBox Name="textBox1" TextWrapping="Wrap"
-                Margin="2" Grid.Row = "3">
-        The quick brown fox jumps over the lazy dog.
-        </TextBox>
+        <DockPanel Grid.Row = "4" Grid.Column = "1" Background = "Gray" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+            <Rectangle Fill = "#FF8A8378" DockPanel.Dock="Top" Height = "100"/>
+            <Separator/>
+            <Slider 
+                Name="RectangleHeight" Orientation="Horizontal"
+                Value="50" Minimum="0" Maximum="200" 
+                SmallChange="1" LargeChange="10"
+                TickPlacement="BottomRight" TickFrequency="10"
+                DockPanel.Dock="Bottom"
+            />
+        </DockPanel>
+
     </Grid>
-
-
 </Window>
